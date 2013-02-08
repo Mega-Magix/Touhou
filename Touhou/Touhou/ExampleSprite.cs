@@ -11,12 +11,12 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Touhou.ExampleSprite
 {
-    public class Touhou : Microsoft.Xna.Framework.Game
+    public class ExampleSprite : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
-        public Touhou()
+        public ExampleSprite()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
@@ -24,17 +24,26 @@ namespace Touhou.ExampleSprite
 
         protected override void Initialize()
         {
+            // TODO: Add your initialization logic here
+
             base.Initialize();
         }
+
+        Texture2D myTexture;
+
+        Vector2 spritePosition = Vector2.Zero;
+
+        Vector2 spriteSpeed = new Vector2(100.0f, 100.0f);
 
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            myTexture = Content.Load<Texture2D>("Reimu Sprite");
         }
 
         protected override void UnloadContent()
         {
-            
+
         }
 
         protected override void Update(GameTime gameTime)
@@ -42,12 +51,58 @@ namespace Touhou.ExampleSprite
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            this.UpdateSprite(gameTime);
+
             base.Update(gameTime);
+        }
+
+        void UpdateSprite(GameTime gameTime)
+        {
+            // Move the sprite by speed, scaled by elapsed time.
+            spritePosition +=
+                spriteSpeed * (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            int MaxX =
+                graphics.GraphicsDevice.Viewport.Width - myTexture.Width;
+            int MinX = 0;
+            int MaxY =
+                graphics.GraphicsDevice.Viewport.Height - myTexture.Height;
+            int MinY = 0;
+
+            // Check for bounce.
+            if (spritePosition.X > MaxX)
+            {
+                spriteSpeed.X *= -1;
+                spritePosition.X = MaxX;
+            }
+
+            else if (spritePosition.X < MinX)
+            {
+                spriteSpeed.X *= -1;
+                spritePosition.X = MinX;
+            }
+
+            if (spritePosition.Y > MaxY)
+            {
+                spriteSpeed.Y *= -1;
+                spritePosition.Y = MaxY;
+            }
+
+            else if (spritePosition.Y < MinY)
+            {
+                spriteSpeed.Y *= -1;
+                spritePosition.Y = MinY;
+            }
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            // Draw the sprite.
+            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
+            spriteBatch.Draw(myTexture, spritePosition, Color.White);
+            spriteBatch.End();
 
             base.Draw(gameTime);
         }

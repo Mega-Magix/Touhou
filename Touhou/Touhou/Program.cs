@@ -7,7 +7,7 @@ namespace Touhou
     {
         static void Main(string[] args)
         {
-            using (Touhou game = new Touhou())
+            using (ExampleSprite.ExampleSprite game = new ExampleSprite.ExampleSprite())
             {
                 game.Run();
             }
