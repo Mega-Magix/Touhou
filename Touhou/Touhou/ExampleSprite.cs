@@ -37,7 +37,7 @@ namespace Touhou.ExampleSprite
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
-            myTexture = Content.Load<Texture2D>("Reimu Sprite");
+            myTexture = Content.Load<Texture2D>("reimu");
         }
 
         protected override void UnloadContent()
