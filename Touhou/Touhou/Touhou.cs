@@ -14,7 +14,9 @@ namespace Touhou
     public class Touhou : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        KeyboardState keystate;
+
+        Level level;
 
         public Touhou()
         {
@@ -25,11 +27,13 @@ namespace Touhou
         protected override void Initialize()
         {
             base.Initialize();
+
+            level = new Level(this);
         }
 
         protected override void LoadContent()
         {
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            
         }
 
         protected override void UnloadContent()
@@ -42,12 +46,18 @@ namespace Touhou
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            keystate = Keyboard.GetState();
+
+            level.Update(gameTime, keystate);
+
             base.Update(gameTime);
         }
 
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
+
+            level.Draw();
 
             base.Draw(gameTime);
         }

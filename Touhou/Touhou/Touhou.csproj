@@ -145,6 +145,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExampleSprite.cs" />
+    <Compile Include="Level.cs" />
     <Compile Include="IronPython.cs" />
     <Compile Include="Program.cs">
       <SubType>Code</SubType>
