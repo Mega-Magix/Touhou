@@ -7,9 +7,23 @@ namespace Touhou
     {
         static void Main(string[] args)
         {
-            using (ExampleSprite.ExampleSprite game = new ExampleSprite.ExampleSprite())
+            String runType = "";
+
+            Console.WriteLine("Please specify which main project file to run: ");
+            Console.WriteLine("-------------------------------------------------");
+            Console.WriteLine(" 0 - Touhou.cs");
+            Console.WriteLine(" 1 - ExampleSprite.cs");
+            Console.WriteLine("-------------------------------------------------");
+            Console.Write(" :: ");
+            runType = Console.ReadLine();
+
+            if (runType == "0")
             {
-                game.Run();
+                using (Touhou game = new Touhou()) game.Run();
+            }
+            if (runType == "1")
+            {
+                using (ExampleSprite.ExampleSprite game = new ExampleSprite.ExampleSprite()) game.Run();
             }
         }
     }
