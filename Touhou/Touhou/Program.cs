@@ -7,12 +7,15 @@ namespace Touhou
     {
         static void Main(string[] args)
         {
+            IronPython.IronPython ironPython = new IronPython.IronPython();
+
             String runType = "";
 
             Console.WriteLine("Please specify which main project file to run: ");
             Console.WriteLine("-------------------------------------------------");
             Console.WriteLine(" 0 - Touhou.cs");
             Console.WriteLine(" 1 - ExampleSprite.cs");
+            Console.WriteLine(" 2 - (IronPython test)");
             Console.WriteLine("-------------------------------------------------");
             Console.Write(" :: ");
             runType = Console.ReadLine();
@@ -24,6 +27,13 @@ namespace Touhou
             if (runType == "1")
             {
                 using (ExampleSprite.ExampleSprite game = new ExampleSprite.ExampleSprite()) game.Run();
+            }
+            if (runType == "2")
+            {
+                Console.Write("Choose a python script to run: ");
+                String moduleName;
+                moduleName = Console.ReadLine();
+                ironPython.RunFile(moduleName);
             }
         }
     }

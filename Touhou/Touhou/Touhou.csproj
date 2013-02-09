@@ -73,6 +73,9 @@
       <HintPath>..\..\..\..\..\..\..\..\..\Program Files (x86)\IronPython 2.7\IronPython.Modules.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.CSharp">
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Dynamic, Version=1.1.0.20, Culture=neutral, PublicKeyToken=7f709c5b713576e1, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\..\..\Program Files (x86)\IronPython 2.7\Microsoft.Dynamic.dll</HintPath>
@@ -136,6 +139,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExampleSprite.cs" />
+    <Compile Include="IronPython.cs" />
     <Compile Include="Program.cs">
       <SubType>Code</SubType>
     </Compile>
