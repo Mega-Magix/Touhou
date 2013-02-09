@@ -25,7 +25,7 @@ namespace Touhou.ExampleSprite
         protected override void Initialize()
         {
             base.Initialize();
-            
+
         }
 
         Texture2D playerTexture;
@@ -49,7 +49,8 @@ namespace Touhou.ExampleSprite
 
         KeyboardState keystate;
         Vector2 spriteSpeed;
-        Vector2 bulletSpeed = new Vector2(0.0f,-10.0f);
+        float bulletSpeed = 500.0f;
+        float fireangle = 0.0f;
 
         double firedelay = 0.2;
 
@@ -60,24 +61,29 @@ namespace Touhou.ExampleSprite
 
             keystate = Keyboard.GetState();
             spriteSpeed = Vector2.Zero;
-            if (firedelay >= 0) { firedelay -= gameTime.ElapsedGameTime.TotalSeconds; }
-            if (keystate.IsKeyDown(Keys.Left)) {spriteSpeed.X = -100;}
-            if (keystate.IsKeyDown(Keys.Right)) {spriteSpeed.X = 100;}
-            if (keystate.IsKeyDown(Keys.Up)) {spriteSpeed.Y = -100;}
-            if (keystate.IsKeyDown(Keys.Down)) {spriteSpeed.Y = 100;}
+            if (firedelay >= 0) firedelay -= gameTime.ElapsedGameTime.TotalSeconds;
+            if (keystate.IsKeyDown(Keys.Left)) spriteSpeed.X = -100;
+            if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X = 100;
+            if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y = -100;
+            if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y = 100;
             if (keystate.IsKeyDown(Keys.Z) && firedelay < 0)
             {
-                pBullets.Add(new Bullet(bulletTexture, playerPosition, bulletSpeed));
+                pBullets.Add(new Bullet(bulletTexture, playerPosition, fireangle, bulletSpeed));
                 firedelay += 0.2;
             }
+            if (keystate.IsKeyDown(Keys.X)) fireangle -= 1.0f;
+            if (keystate.IsKeyDown(Keys.C)) fireangle += 1.0f;
 
             this.UpdateSprite(gameTime);
 
             base.Update(gameTime);
         }
 
+        double dt;
+
         void UpdateSprite(GameTime gameTime)
         {
+            dt = gameTime.ElapsedGameTime.TotalSeconds;
             // Move the sprite by speed, scaled by elapsed time.
             playerPosition +=
                 spriteSpeed * (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -90,15 +96,13 @@ namespace Touhou.ExampleSprite
             int MinY = 0;
 
             // Check for edges.
-            if (playerPosition.X > MaxX) {playerPosition.X = MaxX;}
-            else if (playerPosition.X < MinX) {playerPosition.X = MinX;}
-            if (playerPosition.Y > MaxY) {playerPosition.Y = MaxY;}
-            else if (playerPosition.Y < MinY) {playerPosition.Y = MinY;}
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, MinX, MaxX);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, MinY, MaxY);
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            graphics.GraphicsDevice.Clear(Color.Black);
+            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
             int width = graphics.GraphicsDevice.Viewport.Width;
             int height = graphics.GraphicsDevice.Viewport.Height;
 
@@ -107,26 +111,47 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < pBullets.Count; i++)
             {
                 Bullet b = pBullets[i];
-                b.pos.X += b.dir.X; b.pos.Y += b.dir.Y;
+                b.move(gameTime.ElapsedGameTime.TotalSeconds);
                 spriteBatch.Draw(bulletTexture, b.pos, Color.White);
-                if (b.pos.X < 0 || b.pos.X > width || b.pos.Y < 0 || b.pos.Y > height) {b = null;}
+                if (b.pos.X < 0 || b.pos.X > width || b.pos.Y < 0 || b.pos.Y > height)
+                {
+                    pBullets.RemoveAt(i); i--;
+                }
             }
             spriteBatch.Draw(playerTexture, playerPosition, Color.White);
             spriteBatch.End();
-
             base.Draw(gameTime);
         }
-    }
-    public class Bullet
-    {
-        public Texture2D img;
-        public Vector2 pos;
-        public Vector2 dir;
-        public Bullet(Texture2D t, Vector2 p, Vector2 d)
+        public class Bullet
         {
-            img = t;
-            pos = p;
-            dir = d;
+            public Texture2D img;
+            public Vector2 pos;
+            public Vector2 dir;
+            public float speed;
+            public float angle;
+            public float radians;
+            public Bullet(Texture2D t, Vector2 p, float a, float s)
+            {
+                img = t;
+                pos = p;
+                angle = a-90.0f;
+                speed = s;
+                radians = MathHelper.ToRadians(angle);
+                dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+            }
+            public Bullet(Texture2D t, Vector2 p, Vector2 d)
+            {
+                img = t;
+                pos = p;
+                dir = d;
+                angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X))+90.0f;
+                speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
+            }
+            public void move(double dt)
+            {
+                pos.X += dir.X * speed * (float)dt;
+                pos.Y += dir.Y * speed * (float)dt;
+            }
 
         }
     }
