@@ -32,8 +32,6 @@ namespace Touhou.ExampleSprite
 
         Vector2 spritePosition = Vector2.Zero;
 
-        Vector2 spriteSpeed = new Vector2(100.0f, 100.0f);
-
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -45,10 +43,20 @@ namespace Touhou.ExampleSprite
 
         }
 
+        KeyboardState keystate;
+        Vector2 spriteSpeed;
+
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
+
+            keystate = Keyboard.GetState();
+            spriteSpeed = Vector2.Zero;
+            if (keystate.IsKeyDown(Keys.Left)) {spriteSpeed.X = -100;}
+            if (keystate.IsKeyDown(Keys.Right)) {spriteSpeed.X = 100;}
+            if (keystate.IsKeyDown(Keys.Up)) {spriteSpeed.Y = -100;}
+            if (keystate.IsKeyDown(Keys.Down)) {spriteSpeed.Y = 100;}
 
             this.UpdateSprite(gameTime);
 
@@ -61,37 +69,16 @@ namespace Touhou.ExampleSprite
             spritePosition +=
                 spriteSpeed * (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            int MaxX =
-                graphics.GraphicsDevice.Viewport.Width - myTexture.Width;
+            int MaxX = graphics.GraphicsDevice.Viewport.Width - myTexture.Width;
             int MinX = 0;
-            int MaxY =
-                graphics.GraphicsDevice.Viewport.Height - myTexture.Height;
+            int MaxY = graphics.GraphicsDevice.Viewport.Height - myTexture.Height;
             int MinY = 0;
 
-            // Check for bounce.
-            if (spritePosition.X > MaxX)
-            {
-                spriteSpeed.X *= -1;
-                spritePosition.X = MaxX;
-            }
-
-            else if (spritePosition.X < MinX)
-            {
-                spriteSpeed.X *= -1;
-                spritePosition.X = MinX;
-            }
-
-            if (spritePosition.Y > MaxY)
-            {
-                spriteSpeed.Y *= -1;
-                spritePosition.Y = MaxY;
-            }
-
-            else if (spritePosition.Y < MinY)
-            {
-                spriteSpeed.Y *= -1;
-                spritePosition.Y = MinY;
-            }
+            // Check for edges.
+            if (spritePosition.X > MaxX) {spritePosition.X = MaxX;}
+            else if (spritePosition.X < MinX) {spritePosition.X = MinX;}
+            if (spritePosition.Y > MaxY) {spritePosition.Y = MaxY;}
+            else if (spritePosition.Y < MinY) {spritePosition.Y = MinY;}
         }
 
         protected override void Draw(GameTime gameTime)
