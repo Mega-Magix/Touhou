@@ -22,7 +22,7 @@ namespace IronPython
         public void RunFile(String filename)
         {
             var ipy = Python.CreateRuntime();
-            dynamic test = ipy.UseFile("../../../PythonScripts/" + filename);
+            dynamic test = ipy.UseFile("../PythonScripts/" + filename);
             test.main();
         }
     }

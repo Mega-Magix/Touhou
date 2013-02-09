@@ -8,8 +8,8 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Touhou")]
 [assembly: AssemblyProduct("Touhou")]
 [assembly: AssemblyDescription("")]
-[assembly: AssemblyCompany("Hewlett-Packard")]
-[assembly: AssemblyCopyright("Copyright © Hewlett-Packard 2013")]
+[assembly: AssemblyCompany("Team Oracle")]
+[assembly: AssemblyCopyright("Copyright © Team-Oracle 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
