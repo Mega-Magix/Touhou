@@ -24,9 +24,8 @@ namespace Touhou.ExampleSprite
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-
             base.Initialize();
+            
         }
 
         Texture2D myTexture;
@@ -97,7 +96,7 @@ namespace Touhou.ExampleSprite
 
         protected override void Draw(GameTime gameTime)
         {
-            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
+            graphics.GraphicsDevice.Clear(Color.Black);
 
             // Draw the sprite.
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
