@@ -91,8 +91,13 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += 100;
             if (keystate.IsKeyDown(Keys.Z) && firedelay < 0)
             {
+                //Find offset to put bullet at center of sprite
+                int offsetX = (testReimu.Width - bulletTexture.Width) / 2;
+                int offsetY = (testReimu.Height - bulletTexture.Height) / 2;
                 //Shoot bullets at fixed rate when Z is pressed
-                pBullets.Add(new Bullet(bulletTexture, playerPosition, fireangle, bulletSpeed));
+                pBullets.Add(new Bullet(bulletTexture, 
+                    new Vector2(playerPosition.X + offsetX, playerPosition.Y + offsetY),
+                    fireangle, bulletSpeed));
                 firedelay += 0.2;
             }
             //Angle testing controls
