@@ -42,16 +42,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="bullet1.png">
-      <Name>bullet1</Name>
+    <Compile Include="reimu.png">
+      <Name>reimu</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="reimu.png">
-      <Name>reimu</Name>
+    <Compile Include="bullet1.png">
+      <Name>bullet1</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>
@@ -64,13 +63,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="reimumoveleft.png">
-      <Name>reimumoveleft</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="reimuleft.png">
       <Name>reimuleft</Name>
       <Importer>TextureImporter</Importer>
@@ -78,15 +70,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="reimumoveright.png">
-      <Name>reimumoveright</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="reimuright.png">
-      <Name>reimuright</Name>
+    <Compile Include="reimumoveleft.png">
+      <Name>reimumoveleft</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>

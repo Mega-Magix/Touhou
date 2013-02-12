@@ -36,10 +36,10 @@ namespace Touhou.ExampleSprite
         Vector2 playerPosition = Vector2.Zero;
 
         //Arrays and lists for storing texture and animation data
-        string[] texFiles = {"reimufly","reimumoveleft","reimuleft","reimumoveright","reimuright"};
+        string[] texFiles = {"reimufly","reimumoveleft","reimuleft"};
         List<Texture2D> textures = new List<Texture2D>();
-        int[] playerTexFrames = { 4, 3, 4, 3, 4 };
-        double[] playerTexSpeeds = { 0.15, 0.07, 0.15, 0.07, 0.15 };
+        int[] playerTexFrames = { 4, 3, 4 };
+        double[] playerTexSpeeds = { 0.15, 0.05, 0.15 };
         List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
         AnimatedTexture playerTexture;
         Texture2D testReimu;
@@ -52,7 +52,7 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < texFiles.Length; i++)
                 textures.Add(Content.Load<Texture2D>(texFiles[i]));
             //Create Reimu animations
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 3; i++)
                 reimuTextures.Add(new AnimatedTexture(textures[i], playerTexFrames[i], playerTexSpeeds[i]));
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
@@ -70,10 +70,13 @@ namespace Touhou.ExampleSprite
         KeyboardState keystate;
         //Player and bullet data
         Vector2 spriteSpeed;
-        float bulletSpeed = 500.0f;
+        float playerSpeed = 200.0f;
+        float bulletSpeed = 1000.0f;
         float fireangle = 0.0f;
-        double firedelay = 0.2;
+        float firerate = 0.1f;
 
+        SpriteEffects effects = SpriteEffects.None;
+        float firedelay = 0.0f;
 
         protected override void Update(GameTime gameTime)
         {
@@ -84,11 +87,11 @@ namespace Touhou.ExampleSprite
             keystate = Keyboard.GetState();
             //Read keyboard input
             spriteSpeed = Vector2.Zero;
-            if (firedelay >= 0) firedelay -= gameTime.ElapsedGameTime.TotalSeconds;
-            if (keystate.IsKeyDown(Keys.Left)) spriteSpeed.X -= 100;
-            if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X += 100;
-            if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y -= 100;
-            if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += 100;
+            if (firedelay >= 0) firedelay -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (keystate.IsKeyDown(Keys.Left)) spriteSpeed.X -= playerSpeed;
+            if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X += playerSpeed;
+            if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y -= playerSpeed;
+            if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += playerSpeed;
             if (keystate.IsKeyDown(Keys.Z) && firedelay < 0)
             {
                 //Find offset to put bullet at center of sprite
@@ -98,7 +101,7 @@ namespace Touhou.ExampleSprite
                 pBullets.Add(new Bullet(bulletTexture, 
                     new Vector2(playerPosition.X + offsetX, playerPosition.Y + offsetY),
                     fireangle, bulletSpeed));
-                firedelay += 0.2;
+                firedelay += firerate;
             }
             //Angle testing controls
             if (keystate.IsKeyDown(Keys.X)) fireangle -= 1.0f;
@@ -153,24 +156,19 @@ namespace Touhou.ExampleSprite
                 }
             }
             //Determine animations based on movement and current animation
-            if (spriteSpeed.X < 0)
-            {
-                if (playerTexture != reimuTextures[1] && playerTexture != reimuTextures[2])
-                    playerTexture = reimuTextures[1];
-                if (playerTexture == reimuTextures[1] && playerTexture.willFinish(dt))
-                    playerTexture = reimuTextures[2];
-            }
-            if (spriteSpeed.X > 0)
-            {
-                if (playerTexture != reimuTextures[3] && playerTexture != reimuTextures[4])
-                    playerTexture = reimuTextures[3];
-                if (playerTexture.willFinish(dt) && playerTexture == reimuTextures[3])
-                    playerTexture = reimuTextures[4];
-            }
+            if (playerTexture == reimuTextures[0])
+                playerTexture = reimuTextures[1];
+            if (playerTexture == reimuTextures[1] && playerTexture.willFinish(dt))
+                playerTexture = reimuTextures[2];
+            if (spriteSpeed.X < 0 && effects == SpriteEffects.FlipHorizontally)
+            { playerTexture = reimuTextures[1]; effects = SpriteEffects.None; }
+            if (spriteSpeed.X > 0 && effects == SpriteEffects.None)
+            { playerTexture = reimuTextures[1]; effects = SpriteEffects.FlipHorizontally; }
             if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
             
             //Draw player
-            spriteBatch.Draw(playerTexture.img, playerPosition, playerTexture.getFrame(dt), Color.White);
+            spriteBatch.Draw(playerTexture.img, playerPosition, playerTexture.getFrame(dt), 
+                Color.White, 0.0f, Vector2.One, 1.0f, effects, 0.0f);
             //End drawing sprites
             spriteBatch.End();
             base.Draw(gameTime);
