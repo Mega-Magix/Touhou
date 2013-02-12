@@ -42,13 +42,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="reimu.png">
-      <Name>reimu</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="bullet1.png">
       <Name>bullet1</Name>
       <Importer>TextureImporter</Importer>
@@ -72,6 +65,13 @@
   <ItemGroup>
     <Compile Include="reimumoveleft.png">
       <Name>reimumoveleft</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="reimu.png">
+      <Name>reimu</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>
