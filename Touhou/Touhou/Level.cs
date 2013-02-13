@@ -18,18 +18,21 @@ namespace Touhou
         Texture2D playerTexture;
         Texture2D bulletTexture;
 
+        Song music;
+        SoundEffect soundShoot;
+
         int width;
         int height;
 
         Vector2 playerPosition = Vector2.Zero;
-        Vector2 playerSpeed = Vector2.Zero;
+        Vector2 playerVelocity = Vector2.Zero;
 
         List<Bullet> playerBullets = new List<Bullet>();
         List<Bullet> enemyBullets = new List<Bullet>();
 
-        float playerVelocity = 100.0f;
+        float playerSpeed = 170.0f;
         float playerFireWait = 0.0f;
-        float playerFireDelay = 0.05f;
+        float playerFireDelay = 0.1f;
 
         // Delta time, the amount of time passed between game frames.
         float dt;
@@ -38,9 +41,16 @@ namespace Touhou
 
         public Level(Game game)
         {
+            // Load images and sprites
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
             playerTexture = game.Content.Load<Texture2D>("reimu");
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
+            // Load other game media
+            music = game.Content.Load<Song>("A Soul As Red As Ground Cherry");
+            soundShoot = game.Content.Load<SoundEffect>("playershoot");
+
+            // Start playing level music
+            MediaPlayer.Play(music);
 
             width = game.GraphicsDevice.Viewport.Width;
             height = game.GraphicsDevice.Viewport.Height;
@@ -59,18 +69,22 @@ namespace Touhou
             dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             // Move the player if the arrow keys are pressed
-            playerSpeed = Vector2.Zero;
+            playerVelocity = Vector2.Zero;
             if (keystate.IsKeyDown(Keys.Left))
-                playerSpeed.X = -playerVelocity;
+                playerVelocity.X += -playerSpeed;
             if (keystate.IsKeyDown(Keys.Right))
-                playerSpeed.X = playerVelocity;
+                playerVelocity.X += playerSpeed;
             if (keystate.IsKeyDown(Keys.Up)) 
-                playerSpeed.Y = -playerVelocity;
+                playerVelocity.Y += -playerSpeed;
             if (keystate.IsKeyDown(Keys.Down))
-                playerSpeed.Y = playerVelocity;
+                playerVelocity.Y += playerSpeed;
 
             //Move the player sprite based on its speed
-            playerPosition += playerSpeed * dt;
+            playerPosition += playerVelocity * dt;
+
+            // Make sure that the player stays on the screen
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, width - playerTexture.Width);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, height- playerTexture.Height);
 
             //Decrease the player firing delay
             if (playerFireWait > 0.0f)
@@ -88,6 +102,7 @@ namespace Touhou
                     bulletPosition.Y = playerPosition.Y + (playerTexture.Height - bulletTexture.Height) / 2;
                     Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
                     addBullet(bullet, BulletSet.Player);
+                    soundShoot.Play();
                 }
             }
 
