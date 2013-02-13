@@ -36,16 +36,23 @@ namespace Touhou.ExampleSprite
         Vector2 playerPosition = Vector2.Zero;
 
         //Arrays and lists for storing texture and animation data
-        string[] texFiles = {"reimufly","reimumoveleft","reimuleft"};
+        string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
+                            "enemy1fly","enemy1moveright","enemy1right",
+                            "enemy2fly","enemy2moveright","enemy2right"};
         List<Texture2D> textures = new List<Texture2D>();
         int[] playerTexFrames = { 4, 3, 4 };
-        double[] playerTexSpeeds = { 0.15, 0.05, 0.15 };
+        double[] playerTexSpeeds = { 0.2, 0.1, 0.2 };
+        int[] enemyTexFrames = { 4, 3, 1 };
+        double[] enemyTexSpeeds = { 0.3, 0.1, 1 };
         List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
+        List<AnimatedTexture> enemyTextures = new List<AnimatedTexture>();
         AnimatedTexture playerTexture;
         Texture2D testReimu;
         Texture2D bulletTexture;
         SoundEffect playerShoot;
         Song bgm;
+
+        int width; int height; int MaxX; int MaxY;
 
         protected override void LoadContent()
         {
@@ -56,6 +63,9 @@ namespace Touhou.ExampleSprite
             //Create Reimu animations
             for (int i = 0; i < 3; i++)
                 reimuTextures.Add(new AnimatedTexture(textures[i], playerTexFrames[i], playerTexSpeeds[i]));
+            //Create enemy animations
+            for (int i = 0; i < 3; i++)
+                enemyTextures.Add(new AnimatedTexture(textures[i+3], enemyTexFrames[i], enemyTexSpeeds[i]));
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
             //Load test Reimu texture
@@ -67,6 +77,11 @@ namespace Touhou.ExampleSprite
             //Load BGM and play it
             bgm = Content.Load<Song>("A Soul As Red As Ground Cherry");
             MediaPlayer.Play(bgm);
+            //Set screen boundaries
+            width = graphics.GraphicsDevice.Viewport.Width;
+            height = graphics.GraphicsDevice.Viewport.Height;
+            MaxX = width - testReimu.Width;
+            MaxY = height - testReimu.Height;
         }
 
         protected override void UnloadContent()
@@ -78,23 +93,41 @@ namespace Touhou.ExampleSprite
         //Player and bullet data
         Vector2 spriteSpeed;
         float playerSpeed = 200.0f;
-        float bulletSpeed = 1000.0f;
+        float bulletSpeed = 750.0f;
         float fireangle = 0.0f;
         float firerate = 0.1f;
 
         SpriteEffects effects = SpriteEffects.None;
         float firedelay = 0.0f;
 
+        double dt;
+
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            //Get elapsed time
+            dt = gameTime.ElapsedGameTime.TotalSeconds;
+
+            //Read keyboard input
+            this.readInput();
+            //Move the player
+            this.movePlayer();
+            //Draw sprites
+            this.Draw(gameTime);
+
+
+            base.Update(gameTime);
+        }
+
+        void readInput()
+        {
             //Get keyboard state
             keystate = Keyboard.GetState();
             //Read keyboard input
             spriteSpeed = Vector2.Zero;
-            if (firedelay >= 0) firedelay -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (firedelay >= 0) firedelay -= (float)dt;
             if (keystate.IsKeyDown(Keys.Left)) spriteSpeed.X -= playerSpeed;
             if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X += playerSpeed;
             if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y -= playerSpeed;
@@ -105,7 +138,7 @@ namespace Touhou.ExampleSprite
                 int offsetX = (testReimu.Width - bulletTexture.Width) / 2;
                 int offsetY = (testReimu.Height - bulletTexture.Height) / 2;
                 //Shoot bullets at fixed rate when Z is pressed
-                pBullets.Add(new Bullet(bulletTexture, 
+                pBullets.Add(new Bullet(bulletTexture,
                     new Vector2(playerPosition.X + offsetX, playerPosition.Y + offsetY),
                     fireangle, bulletSpeed));
                 playerShoot.Play();
@@ -114,31 +147,16 @@ namespace Touhou.ExampleSprite
             //Angle testing controls
             if (keystate.IsKeyDown(Keys.X)) fireangle -= 1.0f;
             if (keystate.IsKeyDown(Keys.C)) fireangle += 1.0f;
-
-            this.UpdateSprite(gameTime);
-
-            base.Update(gameTime);
         }
+        
 
-        double dt;
-
-
-        void UpdateSprite(GameTime gameTime)
+        void movePlayer()
         {
-            //Get elapsed time
-            dt = gameTime.ElapsedGameTime.TotalSeconds;
             // Move the sprite by speed, scaled by elapsed time.
             playerPosition += spriteSpeed * (float)dt;
-            //Set screen boundaries
-            int width = graphics.GraphicsDevice.Viewport.Width;
-            int height = graphics.GraphicsDevice.Viewport.Height;
-            int MaxX = width - testReimu.Width;
-            int MinX = 0;
-            int MaxY = height - testReimu.Height;
-            int MinY = 0;
             // Check for edges.
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, MinX, MaxX);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, MinY, MaxY);
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, MaxX);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, MaxY);
         }
 
 
@@ -159,9 +177,7 @@ namespace Touhou.ExampleSprite
                 spriteBatch.Draw(bulletTexture, b.pos, Color.White);
                 //Remove off-screen bullets
                 if (b.pos.X < 0 || b.pos.X > width || b.pos.Y < 0 || b.pos.Y > height)
-                {
-                    pBullets.RemoveAt(i); i--;
-                }
+                {pBullets.RemoveAt(i); i--;}
             }
             //Determine animations based on movement and current animation
             if (playerTexture == reimuTextures[0])
