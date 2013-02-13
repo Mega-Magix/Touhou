@@ -149,7 +149,8 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.X)) fireangle -= 1.0f;
             if (keystate.IsKeyDown(Keys.C)) fireangle += 1.0f;
         }
-        
+
+        SpriteEffects playerEffect = SpriteEffects.None;
 
         public void drawPlayer()
         {
@@ -163,14 +164,14 @@ namespace Touhou.ExampleSprite
                 playerTexture = reimuTextures[1];
             if (playerTexture == reimuTextures[1] && playerTexture.willFinish(dt))
                 playerTexture = reimuTextures[2];
-            if (spriteSpeed.X < 0 && playerTexture.effects == SpriteEffects.FlipHorizontally)
-            { playerTexture = reimuTextures[1]; playerTexture.effects = SpriteEffects.None; }
-            if (spriteSpeed.X > 0 && playerTexture.effects == SpriteEffects.None)
-            { playerTexture = reimuTextures[1]; playerTexture.effects = SpriteEffects.FlipHorizontally; }
+            if (spriteSpeed.X < 0 && playerEffect == SpriteEffects.FlipHorizontally)
+            { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.None; }
+            if (spriteSpeed.X > 0 && playerEffect == SpriteEffects.None)
+            { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
             if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
             //Draw player
             spriteBatch.Draw(playerTexture.img, playerPosition, playerTexture.getFrame(dt),
-                Color.White, 0.0f, Vector2.One, 1.0f, playerTexture.effects, 0.0f);
+                Color.White, 0.0f, Vector2.One, 1.0f, playerEffect, 0.0f);
 
         }
 
@@ -183,10 +184,9 @@ namespace Touhou.ExampleSprite
                 return false;
             //Draw enemy
             spriteBatch.Draw(enemy.img.img, enemy.pos, enemy.img.getFrame(dt),
-                Color.White, 0.0f, Vector2.One, 1.0f, enemy.img.effects, 0.0f);
+                Color.White, 0.0f, Vector2.One, 1.0f, enemy.effect, 0.0f);
             return true;
         }
-
         public bool drawBullet(Bullet bullet)
         {
             //Move the bullet
@@ -282,6 +282,7 @@ namespace Touhou.ExampleSprite
             public float speed;
             public float angle;
             public float radians;
+            public SpriteEffects effect = SpriteEffects.None;
             //Constructor given angular direction
             public Enemy(AnimatedTexture t, Vector2 p, float a, float s)
             {
@@ -305,9 +306,8 @@ namespace Touhou.ExampleSprite
             public int frame = 0;
             public double speed;
             public double delay;
-            public SpriteEffects effects = SpriteEffects.None;
             //Constructor taking texture file, number of frames, frame rate, and optional effects
-            public AnimatedTexture(Texture2D t, int f, double s, SpriteEffects e = SpriteEffects.None)
+            public AnimatedTexture(Texture2D t, int f, double s)
             {
                 img = t; frames = f; delay = speed = s;
             }
