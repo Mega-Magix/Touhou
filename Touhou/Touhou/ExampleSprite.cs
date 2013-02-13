@@ -44,6 +44,8 @@ namespace Touhou.ExampleSprite
         AnimatedTexture playerTexture;
         Texture2D testReimu;
         Texture2D bulletTexture;
+        SoundEffect playerShoot;
+        Song bgm;
 
         protected override void LoadContent()
         {
@@ -60,6 +62,11 @@ namespace Touhou.ExampleSprite
             testReimu = Content.Load<Texture2D>("reimu");
             //Load test bullet texture
             bulletTexture = Content.Load<Texture2D>("bullet1");
+            //Load test bullet sound
+            playerShoot = Content.Load<SoundEffect>("playershoot");
+            //Load BGM and play it
+            bgm = Content.Load<Song>("A Soul As Red As Ground Cherry");
+            MediaPlayer.Play(bgm);
         }
 
         protected override void UnloadContent()
@@ -101,6 +108,7 @@ namespace Touhou.ExampleSprite
                 pBullets.Add(new Bullet(bulletTexture, 
                     new Vector2(playerPosition.X + offsetX, playerPosition.Y + offsetY),
                     fireangle, bulletSpeed));
+                playerShoot.Play();
                 firedelay += firerate;
             }
             //Angle testing controls
