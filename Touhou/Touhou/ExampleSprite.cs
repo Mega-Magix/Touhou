@@ -33,9 +33,6 @@ namespace Touhou.ExampleSprite
         List<Bullet> eBullets = new List<Bullet>();
         List<Enemy> enemies = new List<Enemy>();
 
-        //Player starts at (0,0)
-        Vector2 playerPosition = Vector2.Zero;
-
         //Arrays and lists for storing texture and animation data
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
@@ -55,7 +52,7 @@ namespace Touhou.ExampleSprite
 
         Random random = new Random();
 
-        int width; int height; int MaxX; int MaxY;
+        static int width; static int height; int MaxX; int MaxY;
 
         protected override void LoadContent()
         {
@@ -94,7 +91,8 @@ namespace Touhou.ExampleSprite
         //State of keyboard
         KeyboardState keystate;
         //Player and bullet data
-        Vector2 spriteSpeed;
+        Vector2 spriteSpeed = Vector2.Zero;
+        Vector2 playerPosition = new Vector2(width, height) / 2;
         float playerSpeed = 100.0f;
         float bulletSpeed = 750.0f;
         float fireangle = 0.0f;
@@ -139,9 +137,7 @@ namespace Touhou.ExampleSprite
                 int offsetX = (testReimu.Width - bulletTexture.Width) / 2;
                 int offsetY = (testReimu.Height - bulletTexture.Height) / 2;
                 //Shoot bullets at fixed rate when Z is pressed
-                pBullets.Add(new Bullet(bulletTexture,
-                    new Vector2(playerPosition.X + offsetX, playerPosition.Y + offsetY),
-                    fireangle, bulletSpeed));
+                pBullets.Add(new Bullet(bulletTexture,playerPosition,fireangle, bulletSpeed));
                 playerShoot.Play();
                 firedelay += firerate;
             }
@@ -170,8 +166,9 @@ namespace Touhou.ExampleSprite
             { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
             if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
             //Draw player
-            spriteBatch.Draw(playerTexture.img, playerPosition, playerTexture.getFrame(dt),
-                Color.White, 0.0f, Vector2.One, 1.0f, playerEffect, 0.0f);
+            spriteBatch.Draw(playerTexture.img, playerPosition - new Vector2(testReimu.Width,
+                    testReimu.Height) / 2, playerTexture.getFrame(dt),
+                Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
 
         }
 
@@ -183,10 +180,11 @@ namespace Touhou.ExampleSprite
             if (enemy.pos.X < -50 || enemy.pos.X > width + 50 || enemy.pos.Y < -50 || enemy.pos.Y > height + 50)
                 return false;
             //Draw enemy
-            spriteBatch.Draw(enemy.img.img, enemy.pos, enemy.img.getFrame(dt),
-                Color.White, 0.0f, Vector2.One, 1.0f, enemy.effect, 0.0f);
+            spriteBatch.Draw(enemy.img.img, enemy.pos - enemy.dim / 2, enemy.img.getFrame(dt),
+                Color.White, 0.0f, Vector2.Zero, 1.0f, enemy.effect, 0.0f);
             return true;
         }
+
         public bool drawBullet(Bullet bullet)
         {
             //Move the bullet
@@ -194,14 +192,18 @@ namespace Touhou.ExampleSprite
             //Delete the bullet when off-screen
             if (bullet.pos.X < -50 || bullet.pos.X > width + 50 || bullet.pos.Y < -50 || bullet.pos.Y > height + 50)
                 return false;
-            spriteBatch.Draw(bullet.img, bullet.pos, Color.White);
+            spriteBatch.Draw(bullet.img, bullet.pos - bullet.dim / 2, Color.White);
             return true;
         }
+
+        
 
         double spawnDelay = 0.5;
 
         public void spawnEnemies(double dt)
         {
+            Vector2 testvector = new Vector2(3, 5);
+            Vector2 result = testvector * 4;
             spawnDelay -= dt;
             if (spawnDelay <= 0)
             {
@@ -218,19 +220,30 @@ namespace Touhou.ExampleSprite
 
             // Begin drawing sprites
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
+            //Move and draw player bullets
+            for (int i = 0; i < pBullets.Count; i++)
+            {
+                Bullet b = pBullets[i];
+                //Remove bullet if off-screen
+                if (!this.drawBullet(b))
+                { pBullets.RemoveAt(i); i--; continue; }
+                //Check for bullet collisions with enemies
+                for (int j = 0; j < enemies.Count; j++)
+                {
+                    if (Math.Abs(enemies[j].pos.X - b.pos.X) < enemies[j].dim.X - b.dim.X &&
+                        Math.Abs(enemies[j].pos.Y - b.pos.Y) < enemies[j].dim.Y - b.dim.Y)
+                    //Destroy enemy and bullet upon collision
+                    { pBullets.RemoveAt(i); i--; enemies.RemoveAt(j); j--; }
+                }
+            }
+            //Move and draw the player
+            this.drawPlayer();
             //Move and draw enemies
             for (int i = 0; i < enemies.Count; i++)
             {
                 Enemy e = enemies[i];
                 if (!this.drawEnemy(e))
                 { enemies.RemoveAt(i); i--; }
-            }
-            //Move and draw player bullets
-            for (int i = 0; i < pBullets.Count; i++)
-            {
-                Bullet b = pBullets[i];
-                if (!this.drawBullet(b))
-                { pBullets.RemoveAt(i); i--; }
             }
             //Move and draw enemy bullets
             for (int i = 0; i < eBullets.Count; i++)
@@ -239,8 +252,7 @@ namespace Touhou.ExampleSprite
                 if (!this.drawBullet(b))
                 { eBullets.RemoveAt(i); i--; }
             }
-            //Move and draw the player
-            this.drawPlayer();
+            
 
             //End drawing sprites
             spriteBatch.End();
@@ -252,6 +264,7 @@ namespace Touhou.ExampleSprite
         public class Bullet
         {
             public Texture2D img;
+            public Vector2 dim;
             public Vector2 pos;
             public Vector2 dir;
             public float speed;
@@ -263,6 +276,7 @@ namespace Touhou.ExampleSprite
                 img = t; pos = p; angle = a-90.0f; speed = s;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+                dim = new Vector2(img.Width, img.Height);
             }
             //Constructor given vector direction
             public Bullet(Texture2D t, Vector2 p, Vector2 d)
@@ -277,6 +291,7 @@ namespace Touhou.ExampleSprite
         public class Enemy
         {
             public AnimatedTexture img;
+            public Vector2 dim;
             public Vector2 pos;
             public Vector2 dir;
             public float speed;
@@ -289,6 +304,7 @@ namespace Touhou.ExampleSprite
                 img = t; pos = p; angle = a - 90.0f; speed = s;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+                dim = img.dim;
             }
             //Constructor given vector direction
             public Enemy(AnimatedTexture t, Vector2 p, Vector2 d)
@@ -302,6 +318,7 @@ namespace Touhou.ExampleSprite
         public class AnimatedTexture
         {
             public Texture2D img;
+            public Vector2 dim;
             public int frames;
             public int frame = 0;
             public double speed;
@@ -310,12 +327,14 @@ namespace Touhou.ExampleSprite
             public AnimatedTexture(Texture2D t, int f, double s)
             {
                 img = t; frames = f; delay = speed = s;
+                dim = new Vector2(img.Width, img.Height);
             }
             //Constructor making a new instance as a copy. Use this to make several instances of
             //AnimatedTexture to animate seperately.
             public AnimatedTexture(AnimatedTexture a)
             {
                 img = a.img; frames = a.frames; delay = a.delay; speed = a.speed; delay = speed;
+                dim = a.dim;
             }
             //Gets a rectangle representing the frame to be drawn. Needs to be called each update
             public Rectangle getFrame(double dt)
