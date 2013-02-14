@@ -235,6 +235,7 @@ namespace Touhou.ExampleSprite
                         enemySound.Play();
                         pBullets.RemoveAt(i); i--;
                         enemies.RemoveAt(j); j--;
+                        break;
                     }
                 }
             }
