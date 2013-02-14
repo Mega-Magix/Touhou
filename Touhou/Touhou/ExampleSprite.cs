@@ -153,8 +153,8 @@ namespace Touhou.ExampleSprite
             //Move the player
             playerPosition += spriteSpeed * (float)dt;
             //Keep the player on screen
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, MaxX);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, MaxY);
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, testReimu.Width / 2, width - testReimu.Width / 2);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, testReimu.Height / 2, height - testReimu.Height / 2);
             //Determine animations based on movement and current animation
             if (playerTexture == reimuTextures[0])
                 playerTexture = reimuTextures[1];
