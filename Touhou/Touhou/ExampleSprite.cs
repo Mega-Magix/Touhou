@@ -45,14 +45,13 @@ namespace Touhou.ExampleSprite
         List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
         List<AnimatedTexture> enemyTextures = new List<AnimatedTexture>();
         AnimatedTexture playerTexture;
-        Texture2D testReimu;
         Texture2D bulletTexture;
         SoundEffect playerShoot;
         Song bgm;
 
         Random random = new Random();
 
-        static int width; static int height; int MaxX; int MaxY;
+        static int width; static int height;
 
         protected override void LoadContent()
         {
@@ -68,8 +67,6 @@ namespace Touhou.ExampleSprite
                 enemyTextures.Add(new AnimatedTexture(textures[i+3], enemyTexFrames[i], enemyTexSpeeds[i]));
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
-            //Load test Reimu texture
-            testReimu = Content.Load<Texture2D>("reimu");
             //Load test bullet texture
             bulletTexture = Content.Load<Texture2D>("bullet1");
             //Load test bullet sound
@@ -80,8 +77,6 @@ namespace Touhou.ExampleSprite
             //Set screen boundaries
             width = graphics.GraphicsDevice.Viewport.Width;
             height = graphics.GraphicsDevice.Viewport.Height;
-            MaxX = width - testReimu.Width;
-            MaxY = height - testReimu.Height;
         }
 
         protected override void UnloadContent()
@@ -133,9 +128,6 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += playerSpeed;
             if (keystate.IsKeyDown(Keys.Z) && firedelay < 0)
             {
-                //Find offset to put bullet at center of sprite
-                int offsetX = (testReimu.Width - bulletTexture.Width) / 2;
-                int offsetY = (testReimu.Height - bulletTexture.Height) / 2;
                 //Shoot bullets at fixed rate when Z is pressed
                 pBullets.Add(new Bullet(bulletTexture,playerPosition,fireangle, bulletSpeed));
                 playerShoot.Play();
@@ -153,8 +145,8 @@ namespace Touhou.ExampleSprite
             //Move the player
             playerPosition += spriteSpeed * (float)dt;
             //Keep the player on screen
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, testReimu.Width / 2, width - testReimu.Width / 2);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, testReimu.Height / 2, height - testReimu.Height / 2);
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, playerTexture.dim.X / 2, width - playerTexture.dim.X / 2);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, playerTexture.dim.Y / 2, height - playerTexture.dim.Y / 2);
             //Determine animations based on movement and current animation
             if (playerTexture == reimuTextures[0])
                 playerTexture = reimuTextures[1];
@@ -166,9 +158,8 @@ namespace Touhou.ExampleSprite
             { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
             if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
             //Draw player
-            spriteBatch.Draw(playerTexture.img, playerPosition - new Vector2(testReimu.Width,
-                    testReimu.Height) / 2, playerTexture.getFrame(dt),
-                Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
+            spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2, 
+                playerTexture.getFrame(dt), Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
 
         }
 
@@ -198,12 +189,10 @@ namespace Touhou.ExampleSprite
 
         
 
-        double spawnDelay = 0.5;
+        double spawnDelay = 0.0;
 
         public void spawnEnemies(double dt)
         {
-            Vector2 testvector = new Vector2(3, 5);
-            Vector2 result = testvector * 4;
             spawnDelay -= dt;
             if (spawnDelay <= 0)
             {
@@ -230,8 +219,8 @@ namespace Touhou.ExampleSprite
                 //Check for bullet collisions with enemies
                 for (int j = 0; j < enemies.Count; j++)
                 {
-                    if (Math.Abs(enemies[j].pos.X - b.pos.X) < enemies[j].dim.X - b.dim.X &&
-                        Math.Abs(enemies[j].pos.Y - b.pos.Y) < enemies[j].dim.Y - b.dim.Y)
+                    if (Math.Abs(enemies[j].pos.X - b.pos.X) < enemies[j].img.dim.X &&
+                        Math.Abs(enemies[j].pos.Y - b.pos.Y) < enemies[j].img.dim.Y)
                     //Destroy enemy and bullet upon collision
                     { pBullets.RemoveAt(i); i--; enemies.RemoveAt(j); j--; }
                 }
@@ -327,7 +316,7 @@ namespace Touhou.ExampleSprite
             public AnimatedTexture(Texture2D t, int f, double s)
             {
                 img = t; frames = f; delay = speed = s;
-                dim = new Vector2(img.Width, img.Height);
+                dim = new Vector2(img.Width / frames, img.Height);
             }
             //Constructor making a new instance as a copy. Use this to make several instances of
             //AnimatedTexture to animate seperately.
