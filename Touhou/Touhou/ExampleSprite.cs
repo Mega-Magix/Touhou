@@ -44,9 +44,12 @@ namespace Touhou.ExampleSprite
         double[] enemyTexSpeeds = { 0.2, 0.1, 1 };
         List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
         List<AnimatedTexture> enemyTextures = new List<AnimatedTexture>();
+        List<EnemyExplosion> explosions = new List<EnemyExplosion>();
         AnimatedTexture playerTexture;
         Texture2D bulletTexture;
         SoundEffect playerShoot;
+        Texture2D enemyExplode;
+        SoundEffect enemySound;
         Song bgm;
 
         Random random = new Random();
@@ -67,6 +70,10 @@ namespace Touhou.ExampleSprite
                 enemyTextures.Add(new AnimatedTexture(textures[i+3], enemyTexFrames[i], enemyTexSpeeds[i]));
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
+            //Load enemy explosion texture
+            enemyExplode = Content.Load<Texture2D>("explodeblue");
+            //Load enemy explosion sound
+            enemySound = Content.Load<SoundEffect>("explodesound");
             //Load test bullet texture
             bulletTexture = Content.Load<Texture2D>("bullet1");
             //Load test bullet sound
@@ -129,7 +136,7 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.Z) && firedelay < 0)
             {
                 //Shoot bullets at fixed rate when Z is pressed
-                pBullets.Add(new Bullet(bulletTexture,playerPosition,fireangle, bulletSpeed));
+                pBullets.Add(new Bullet(bulletTexture,playerPosition,fireangle, bulletSpeed, Color.White));
                 playerShoot.Play();
                 firedelay += firerate;
             }
@@ -183,7 +190,7 @@ namespace Touhou.ExampleSprite
             //Delete the bullet when off-screen
             if (bullet.pos.X < -50 || bullet.pos.X > width + 50 || bullet.pos.Y < -50 || bullet.pos.Y > height + 50)
                 return false;
-            spriteBatch.Draw(bullet.img, bullet.pos - bullet.dim / 2, Color.White);
+            spriteBatch.Draw(bullet.img, bullet.pos - bullet.dim / 2, bullet.color);
             return true;
         }
 
@@ -197,7 +204,7 @@ namespace Touhou.ExampleSprite
             if (spawnDelay <= 0)
             {
                 spawnDelay += 0.5; enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
-                   new Vector2(random.Next(0, width), -30), 180.0f, 50.0f));
+                   new Vector2(random.Next(0, width), -30), 180.0f, 50.0f, Color.Blue));
             }
         }
         protected override void Draw(GameTime gameTime)
@@ -221,8 +228,14 @@ namespace Touhou.ExampleSprite
                 {
                     if (Math.Abs(enemies[j].pos.X - b.pos.X) < enemies[j].dim.X &&
                         Math.Abs(enemies[j].pos.Y - b.pos.Y) < enemies[j].dim.Y)
-                    //Destroy enemy and bullet upon collision
-                    { pBullets.RemoveAt(i); i--; enemies.RemoveAt(j); j--; }
+                    //Destroy enemy and bullet upon collision and create explosion
+                    {
+                        explosions.Add(new EnemyExplosion(enemyExplode, enemies[j].pos,
+                            1.5f, enemies[j].color));
+                        enemySound.Play();
+                        pBullets.RemoveAt(i); i--;
+                        enemies.RemoveAt(j); j--;
+                    }
                 }
             }
             //Move and draw the player
@@ -241,7 +254,17 @@ namespace Touhou.ExampleSprite
                 if (!this.drawBullet(b))
                 { eBullets.RemoveAt(i); i--; }
             }
-            
+            //Update and draw explosions
+            for (int i = 0; i < explosions.Count; i++)
+            {
+                EnemyExplosion e = explosions[i];
+                e.expandAmount += (float)dt * 2;
+                e.alphaAmount -= (float)dt * 2;
+                if (e.alphaAmount <= 0)
+                { explosions.RemoveAt(i); i--; continue; }
+                spriteBatch.Draw(enemyExplode, e.pos - e.dim * e.expandAmount / 2, e.img.Bounds, Color.White * e.alphaAmount,
+                    0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.0f);
+            }
 
             //End drawing sprites
             spriteBatch.End();
@@ -259,13 +282,15 @@ namespace Touhou.ExampleSprite
             public float speed;
             public float angle;
             public float radians;
+            public Color color;
             //Constructor given angular direction
-            public Bullet(Texture2D t, Vector2 p, float a, float s)
+            public Bullet(Texture2D t, Vector2 p, float a, float s, Color c)
             {
                 img = t; pos = p; angle = a-90.0f; speed = s;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
                 dim = new Vector2(img.Width, img.Height);
+                color = c;
             }
             //Constructor given vector direction
             public Bullet(Texture2D t, Vector2 p, Vector2 d)
@@ -286,14 +311,15 @@ namespace Touhou.ExampleSprite
             public float speed;
             public float angle;
             public float radians;
+            public Color color;
             public SpriteEffects effect = SpriteEffects.None;
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c)
             {
                 img = t; pos = p; angle = a - 90.0f; speed = s;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
-                dim = img.dim;
+                dim = img.dim; color = c;
             }
             //Constructor given vector direction
             public Enemy(AnimatedTexture t, Vector2 p, Vector2 d)
@@ -301,6 +327,22 @@ namespace Touhou.ExampleSprite
                 img = t; pos = p; dir = d;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
+            }
+        }
+
+        public class EnemyExplosion
+        {
+            public Texture2D img;
+            public Vector2 dim;
+            public Vector2 pos;
+            public float expansionRate;
+            public float expandAmount = 0.5f;
+            public float alphaAmount = 1.0f;
+            public Color color;
+            //Constructor taking texture file, position, expansion rate, and color.
+            public EnemyExplosion(Texture2D i, Vector2 p, float e, Color c)
+            {
+                img = i; pos = p; dim = new Vector2(i.Width, i.Height); expansionRate = e; color = c;
             }
         }
 
