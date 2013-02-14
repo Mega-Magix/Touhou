@@ -219,8 +219,8 @@ namespace Touhou.ExampleSprite
                 //Check for bullet collisions with enemies
                 for (int j = 0; j < enemies.Count; j++)
                 {
-                    if (Math.Abs(enemies[j].pos.X - b.pos.X) < enemies[j].img.dim.X &&
-                        Math.Abs(enemies[j].pos.Y - b.pos.Y) < enemies[j].img.dim.Y)
+                    if (Math.Abs(enemies[j].pos.X - b.pos.X) < enemies[j].dim.X &&
+                        Math.Abs(enemies[j].pos.Y - b.pos.Y) < enemies[j].dim.Y)
                     //Destroy enemy and bullet upon collision
                     { pBullets.RemoveAt(i); i--; enemies.RemoveAt(j); j--; }
                 }
