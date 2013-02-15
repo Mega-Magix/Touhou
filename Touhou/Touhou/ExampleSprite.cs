@@ -312,7 +312,7 @@ namespace Touhou.ExampleSprite
                 { eBullets.RemoveAt(i); i--; continue; }
                 //Check for bullet collisions with player (but only if the player is not dead)
                 if (Math.Sqrt((playerPosition.X - b.pos.X) * (playerPosition.X - b.pos.X) +
-                    (playerPosition.Y - b.pos.Y) * (playerPosition.Y - b.pos.Y)) < 7.5 &&
+                    (playerPosition.Y - b.pos.Y) * (playerPosition.Y - b.pos.Y)) < 10.0 &&
                     playerStatus != "dead")
                     //Destroy bullet upon collision
                     {
