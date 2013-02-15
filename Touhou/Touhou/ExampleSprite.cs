@@ -90,6 +90,7 @@ namespace Touhou.ExampleSprite
             //Set screen boundaries
             width = graphics.GraphicsDevice.Viewport.Width;
             height = graphics.GraphicsDevice.Viewport.Height;
+            playerPosition = new Vector2(width, height) / 2;
         }
 
         protected override void UnloadContent()
@@ -100,7 +101,9 @@ namespace Touhou.ExampleSprite
         KeyboardState keystate;
         //Player and bullet data
         Vector2 spriteSpeed = Vector2.Zero;
-        Vector2 playerPosition = new Vector2(width, height) / 2;
+        Vector2 playerPosition;
+        String playerStatus = "alive";
+        float respawnDelay = 3.0f;
         float playerSpeed = 100.0f;
         float bulletSpeed = 750.0f;
         float fireangle = 0.0f;
@@ -139,9 +142,9 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X += playerSpeed;
             if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y -= playerSpeed;
             if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += playerSpeed;
-            if (keystate.IsKeyDown(Keys.Z) && firedelay < 0)
+            if (keystate.IsKeyDown(Keys.Z) && firedelay < 0 && playerStatus != "dead")
             {
-                //Shoot bullets at fixed rate when Z is pressed
+                //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
                 pBullets.Add(new Bullet(bulletTexture,playerPosition,fireangle, bulletSpeed, Color.White));
                 playerShoot.Play();
                 firedelay += firerate;
@@ -155,24 +158,54 @@ namespace Touhou.ExampleSprite
 
         public void drawPlayer()
         {
-            //Move the player
-            playerPosition += spriteSpeed * (float)dt;
-            //Keep the player on screen
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, playerTexture.dim.X / 2, width - playerTexture.dim.X / 2);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, playerTexture.dim.Y / 2, height - playerTexture.dim.Y / 2);
-            //Determine animations based on movement and current animation
-            if (playerTexture == reimuTextures[0])
-                playerTexture = reimuTextures[1];
-            if (playerTexture == reimuTextures[1] && playerTexture.willFinish(dt))
-                playerTexture = reimuTextures[2];
-            if (spriteSpeed.X < 0 && playerEffect == SpriteEffects.FlipHorizontally)
-            { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.None; }
-            if (spriteSpeed.X > 0 && playerEffect == SpriteEffects.None)
-            { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
-            if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
-            //Draw player
-            spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2, 
-                playerTexture.getFrame(dt), Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
+            //Respawn the player in the center of the screen and give 5 sec. of invulnerability
+            if (playerStatus == "dead")
+            {
+                respawnDelay -= (float)dt;
+                if (respawnDelay <= 0)
+                {
+                    respawnDelay = 5.0f;
+                    playerPosition = new Vector2(width, height) / 2;  playerStatus = "spawning";
+                }
+            }
+            else
+            {
+                //Player is alive after invulnerability period runs out
+                if (playerStatus == "spawning")
+                {
+                    respawnDelay -= (float)dt;
+                    if (respawnDelay <= 0)
+                    {
+                        respawnDelay = 3.0f;
+                        playerStatus = "alive";
+                    }
+                }
+                //Move the player
+                playerPosition += spriteSpeed * (float)dt;
+                //Keep the player on screen
+                playerPosition.X = MathHelper.Clamp(playerPosition.X, playerTexture.dim.X / 2, width - playerTexture.dim.X / 2);
+                playerPosition.Y = MathHelper.Clamp(playerPosition.Y, playerTexture.dim.Y / 2, height - playerTexture.dim.Y / 2);
+                //Determine animations based on movement and current animation
+                if (playerTexture == reimuTextures[0])
+                    playerTexture = reimuTextures[1];
+                if (playerTexture == reimuTextures[1] && playerTexture.willFinish(dt))
+                    playerTexture = reimuTextures[2];
+                if (spriteSpeed.X < 0 && playerEffect == SpriteEffects.FlipHorizontally)
+                { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.None; }
+                if (spriteSpeed.X > 0 && playerEffect == SpriteEffects.None)
+                { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
+                if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
+                //Draw player
+                float[] trans = {0.5f, 1.0f};
+                if (playerStatus == "spawning")
+                    //Make player flash if spawning
+                    spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2,
+                    playerTexture.getFrame(dt), Color.White * trans[(int)(respawnDelay * 2 % 2.0f)], 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
+                else
+                    //Daw player normally if alive
+                    spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2, 
+                    playerTexture.getFrame(dt), Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
+            }
 
         }
 
@@ -231,20 +264,24 @@ namespace Touhou.ExampleSprite
                 Color.White, 0.0f, Vector2.Zero, 1.0f, e.effect, 0.0f);
                 if (!e.update(dt))
                 { enemies.RemoveAt(i); i--; continue; }
-                //Check for enemy collisions with player
-                if (Math.Abs(e.pos.X - playerPosition.X) < e.dim.X &&
-                    Math.Abs(e.pos.Y - playerPosition.Y) < e.dim.Y)
-                //Destroy player and enemy upon collision and create two explosions
+                //Check for enemy collisions with player (but only if the player is not dead)
+                if (Math.Abs(e.pos.X - playerPosition.X) < e.dim.X - 10 &&
+                    Math.Abs(e.pos.Y - playerPosition.Y) < e.dim.Y - 10 &&
+                    playerStatus != "dead")
+                //Destroy enemy upon collision with player and create explosion
                 {
                     explosions.Add(new Explosion(enemyExplode, e.pos,
                         1.0f, e.color));
                     enemySound.Play();
-                    enemies.RemoveAt(i);
-                    explosions.Add(new Explosion(playerExplode, playerPosition,
-                        3.0f, Color.White));
-                    deathSound.Play();
-                    //Kill player
-                    break;
+                    enemies.RemoveAt(i); i--;
+                    //If the player is alive, kill the player and create large explosion
+                    if (playerStatus == "alive")
+                    {
+                        playerStatus = "dead";
+                        deathSound.Play();
+                        explosions.Add(new Explosion(playerExplode, playerPosition,
+                            3.0f, Color.White));
+                    }
                 }
             }
             //Move and draw enemy bullets
