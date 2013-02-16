@@ -18,6 +18,8 @@ namespace Touhou
         Texture2D playerTexture;
         Texture2D bulletTexture;
 
+        Effects.AnimatedTexture playerAnimation;
+
         Song music;
         SoundEffect soundShoot;
 
@@ -43,14 +45,17 @@ namespace Touhou
         {
             // Load images and sprites
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
-            playerTexture = game.Content.Load<Texture2D>("reimu");
+            playerTexture = game.Content.Load<Texture2D>("reimufly");
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
+
+            playerAnimation = new Effects.AnimatedTexture(playerTexture, playerPosition, 4, 0.2);
+
             // Load other game media
             music = game.Content.Load<Song>("A Soul As Red As Ground Cherry");
             soundShoot = game.Content.Load<SoundEffect>("playershoot");
 
             // Start playing level music
-            MediaPlayer.Play(music);
+            // MediaPlayer.Play(music);
 
             width = game.GraphicsDevice.Viewport.Width;
             height = game.GraphicsDevice.Viewport.Height;
@@ -81,6 +86,9 @@ namespace Touhou
 
             //Move the player sprite based on its speed
             playerPosition += playerVelocity * dt;
+            playerAnimation.position = playerPosition;
+
+            playerAnimation.Update(dt);
 
             // Make sure that the player stays on the screen
             playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, width - playerTexture.Width);
@@ -140,7 +148,9 @@ namespace Touhou
             // Draw the player sprite
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
 
-            spriteBatch.Draw(playerTexture, playerPosition, Color.White);
+            //spriteBatch.Draw(playerTexture, playerPosition, Color.White);
+
+            playerAnimation.Draw(spriteBatch);
 
             //Draw each bullet on the screen
             for (int i = 0; i < playerBullets.Count; i++)
