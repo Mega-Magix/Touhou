@@ -28,6 +28,8 @@ namespace Touhou
         {
             base.Initialize();
 
+            base.IsFixedTimeStep = false;
+
             level = new Level(this);
         }
 

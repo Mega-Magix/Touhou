@@ -9,13 +9,17 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
-
 namespace Touhou
 {
     public class Level
     {
 
-        Texture2D playerTexture;
+        Texture2D playerTextureFly;
+        Texture2D playerTextureMoveLeft;
+        Texture2D playerTextureStartMoveLeft;
+        Texture2D playerTextureMoveRight;
+        Texture2D playerTextureStartMoveRight;
+
         Texture2D bulletTexture;
 
         Effects.AnimatedTexture playerAnimation;
@@ -25,6 +29,9 @@ namespace Touhou
 
         int width;
         int height;
+
+        float oldDX;
+        float oldDY;
 
         Vector2 playerPosition = Vector2.Zero;
         Vector2 playerVelocity = Vector2.Zero;
@@ -45,10 +52,16 @@ namespace Touhou
         {
             // Load images and sprites
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
-            playerTexture = game.Content.Load<Texture2D>("reimufly");
+
+            playerTextureFly = game.Content.Load<Texture2D>("reimufly");
+            playerTextureMoveLeft = game.Content.Load<Texture2D>("reimuleft");
+            playerTextureStartMoveLeft = game.Content.Load<Texture2D>("reimumoveleft");
+            playerTextureMoveRight = game.Content.Load<Texture2D>("reimuleft");
+            playerTextureStartMoveRight = game.Content.Load<Texture2D>("reimumoveleft");
+
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
 
-            playerAnimation = new Effects.AnimatedTexture(playerTexture, playerPosition, 4, 0.2);
+            playerAnimation = new Effects.AnimatedTexture(playerTextureFly, playerPosition, 4, 0.1);
 
             // Load other game media
             music = game.Content.Load<Song>("A Soul As Red As Ground Cherry");
@@ -73,16 +86,72 @@ namespace Touhou
         {
             dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
+            oldDX = playerVelocity.X;
+            oldDY = playerVelocity.Y;
+
             // Move the player if the arrow keys are pressed
             playerVelocity = Vector2.Zero;
             if (keystate.IsKeyDown(Keys.Left))
+            {
                 playerVelocity.X += -playerSpeed;
+                if (oldDX == 0.0f)
+                {
+                    playerAnimation.texture = playerTextureStartMoveLeft;
+                    playerAnimation.nextTexture = playerTextureMoveLeft;
+                    playerAnimation.numFrames = 3;
+                    playerAnimation.nextNumFrames = 4;
+                    playerAnimation.resetAnimation();
+                }
+            }
             if (keystate.IsKeyDown(Keys.Right))
+            {
                 playerVelocity.X += playerSpeed;
-            if (keystate.IsKeyDown(Keys.Up)) 
+            }
+            if (keystate.IsKeyDown(Keys.Up))
+            {
                 playerVelocity.Y += -playerSpeed;
+            }
             if (keystate.IsKeyDown(Keys.Down))
+            {
                 playerVelocity.Y += playerSpeed;
+            }
+
+            // Determine player animations based on speed
+            if (playerVelocity.X < 0.0f)
+            {
+                if (playerAnimation.texture != playerTextureStartMoveLeft &&
+                    playerAnimation.texture != playerTextureMoveLeft)
+                {
+                    playerAnimation.texture = playerTextureStartMoveLeft;
+                    playerAnimation.nextTexture = playerTextureMoveLeft;
+                    playerAnimation.numFrames = 3;
+                    playerAnimation.nextNumFrames = 4;
+                    playerAnimation.resetAnimation();
+                }
+            }
+            else if (playerVelocity.X > 0.0f)
+            {
+                if (playerAnimation.texture != playerTextureStartMoveRight &&
+                    playerAnimation.texture != playerTextureMoveRight)
+                {
+                    playerAnimation.texture = playerTextureStartMoveRight;
+                    playerAnimation.nextTexture = playerTextureMoveRight;
+                    playerAnimation.numFrames = 3;
+                    playerAnimation.nextNumFrames = 4;
+                    playerAnimation.resetAnimation();
+                }
+            }
+            else
+            {
+                if (playerAnimation.texture != playerTextureFly)
+                {
+                    playerAnimation.texture = playerTextureFly;
+                    playerAnimation.nextTexture = playerTextureFly;
+                    playerAnimation.numFrames = 4;
+                    playerAnimation.nextNumFrames = 4;
+                    playerAnimation.resetAnimation();
+                }
+            }
 
             //Move the player sprite based on its speed
             playerPosition += playerVelocity * dt;
@@ -91,8 +160,8 @@ namespace Touhou
             playerAnimation.Update(dt);
 
             // Make sure that the player stays on the screen
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, width - playerTexture.Width);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, height- playerTexture.Height);
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, width - playerTextureFly.Width);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, height- playerTextureFly.Height);
 
             //Decrease the player firing delay
             if (playerFireWait > 0.0f)
@@ -106,8 +175,8 @@ namespace Touhou
                     playerFireWait = playerFireDelay;
                     // Fire a new player bullet
                     Vector2 bulletPosition;
-                    bulletPosition.X = playerPosition.X + (playerTexture.Width - bulletTexture.Width) / 2;
-                    bulletPosition.Y = playerPosition.Y + (playerTexture.Height - bulletTexture.Height) / 2;
+                    bulletPosition.X = playerPosition.X + (playerTextureFly.Width - bulletTexture.Width) / 2;
+                    bulletPosition.Y = playerPosition.Y + (playerTextureFly.Height - bulletTexture.Height) / 2;
                     Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
                     addBullet(bullet, BulletSet.Player);
                     soundShoot.Play();

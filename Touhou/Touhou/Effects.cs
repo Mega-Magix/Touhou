@@ -27,14 +27,20 @@ namespace Touhou.Effects
 
         // List of the frame indices to animate over
         public List<int> animationFrames;
+        // List of the frame indices to animate over when this current one is finished
+        public List<int> nextAnimationFrames;
+        public int nextNumFrames;
+        public Texture2D nextTexture;
 
         public Rectangle rectangle;
 
         public AnimatedTexture(Texture2D texture, Vector2 position, int numFrames, double frameRate)
         {
             this.texture = texture;
+            this.nextTexture = texture;
             this.position = position;
             this.numFrames = numFrames;
+            this.nextNumFrames = numFrames;
             this.delay = this.wait = frameRate;
 
             resetAnimationList();
@@ -45,8 +51,10 @@ namespace Touhou.Effects
         public AnimatedTexture(Texture2D texture, Vector2 position, List<int> animationFrames, double frameRate)
         {
             this.texture = texture;
+            this.nextTexture = texture;
             this.position = position;
             this.numFrames = animationFrames.Count;
+            this.nextNumFrames = this.numFrames;
             this.delay = this.wait = frameRate;
 
             this.animationFrames = animationFrames;
@@ -61,6 +69,8 @@ namespace Touhou.Effects
             int i = 0;
             for (i = 0; i < numFrames; i++)
                 this.animationFrames.Add(i);
+
+            this.nextAnimationFrames = new List<int>(this.animationFrames);
 
             resetAnimation();
         }
@@ -86,7 +96,15 @@ namespace Touhou.Effects
                 delay += wait;
                 frame++;
                 if (frame >= numFrames)
+                {
+                    numFrames = nextNumFrames;
+                    if (nextAnimationFrames.Equals(animationFrames))
+                        resetAnimationList();
+                    else
+                        animationFrames = nextAnimationFrames;
+                    texture = nextTexture;
                     frame = 0;
+                }
                 realFrame = animationFrames[frame];
                 rectangle = new Rectangle(texture.Width * realFrame / numFrames, 0, texture.Width / numFrames, texture.Height);
                 
