@@ -51,13 +51,16 @@ namespace Touhou.ExampleSprite
         SoundEffect playerShoot;
         Texture2D playerExplode;
         Texture2D enemyExplode;
+        Texture2D foreground;
         SoundEffect enemySound;
         SoundEffect deathSound;
         Song bgm;
 
         Random random = new Random();
 
-        static int width; static int height;
+        static Vector2 gameDim = new Vector2(420, 480);
+        static Vector2 screenDim;
+        static Vector2 foregroundDim;
 
         protected override void LoadContent()
         {
@@ -88,14 +91,16 @@ namespace Touhou.ExampleSprite
             //Load enemy bullet texture
             bulletTexture1 = Content.Load<Texture2D>("testbullet");
             //Load enemy bullet sound
-            //(none yet)
+            //Not working yet
+            //Load foregraound texture
+            foreground = Content.Load<Texture2D>("foreground");
             //Load BGM and play it
-            bgm = Content.Load<Song>("A Soul As Red As Ground Cherry");
-            MediaPlayer.Play(bgm);
+            bgm = Content.Load<Song>("Song of the Night Sparrow");
+            MediaPlayer.IsRepeating = true; MediaPlayer.Play(bgm);
             //Set screen boundaries
-            width = graphics.GraphicsDevice.Viewport.Width;
-            height = graphics.GraphicsDevice.Viewport.Height;
-            playerPosition = new Vector2(width, height) / 2;
+            screenDim = new Vector2(GraphicsDevice.DisplayMode.Width, GraphicsDevice.DisplayMode.Height);
+            foregroundDim = screenDim - gameDim;
+            playerPosition = gameDim / 2;
         }
 
         protected override void UnloadContent()
@@ -170,7 +175,7 @@ namespace Touhou.ExampleSprite
                 if (respawnDelay <= 0)
                 {
                     respawnDelay = 5.0f;
-                    playerPosition = new Vector2(width, height) / 2;  playerStatus = "spawning";
+                    playerPosition = gameDim / 2;  playerStatus = "spawning";
                 }
             }
             else
@@ -188,8 +193,8 @@ namespace Touhou.ExampleSprite
                 //Move the player
                 playerPosition += spriteSpeed * (float)dt;
                 //Keep the player on screen
-                playerPosition.X = MathHelper.Clamp(playerPosition.X, playerTexture.dim.X / 2, width - playerTexture.dim.X / 2);
-                playerPosition.Y = MathHelper.Clamp(playerPosition.Y, playerTexture.dim.Y / 2, height - playerTexture.dim.Y / 2);
+                playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, gameDim.X );
+                playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, gameDim.Y );
                 //Determine animations based on movement and current animation
                 if (playerTexture == reimuTextures[0])
                     playerTexture = reimuTextures[1];
@@ -214,6 +219,17 @@ namespace Touhou.ExampleSprite
 
         }
 
+        public void drawForeground()
+        {
+            for (int i = (int)gameDim.X; i < screenDim.X; i += foreground.Width)
+            {
+                for (int j = 0; j < screenDim.Y; j += foreground.Height)
+                {
+                    spriteBatch.Draw(foreground, new Vector2(i, j), Color.White);
+                }
+            }
+        }
+
         double spawnDelay1 = 0.0;
         double spawnDelay2 = 5.0;
 
@@ -224,7 +240,7 @@ namespace Touhou.ExampleSprite
             if (spawnDelay1 <= 0)
             {
                 spawnDelay1 += 0.5; enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
-                   new Vector2(random.Next(0, width), -30), 180.0f, 50.0f, Color.Blue));
+                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue));
             }
             if (spawnDelay2 <= 0)
             {
@@ -277,7 +293,7 @@ namespace Touhou.ExampleSprite
             {
                 Enemy e = enemies[i];
                 spriteBatch.Draw(e.img.img, e.pos - e.dim / 2, e.img.getFrame(dt),
-                Color.White, 0.0f, Vector2.Zero, 1.0f, e.effect, 0.0f);
+                Color.White, 0.0f, Vector2.Zero, 1.0f, e.effect, 0.3f);
                 if (!e.update(dt))
                 { enemies.RemoveAt(i); i--; continue; }
                 //Have enemies shoot
@@ -306,7 +322,8 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < eBullets.Count; i++)
             {
                 Bullet b = eBullets[i];
-                spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.color);
+                spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds, b.color, 0.0f,
+                    Vector2.Zero, 1.0f, SpriteEffects.None, 0.2f);
                 //Remove bullet if off-screen
                 if (!b.update(dt))
                 { eBullets.RemoveAt(i); i--; continue; }
@@ -336,8 +353,11 @@ namespace Touhou.ExampleSprite
                 if (e.alphaAmount <= 0)
                 { explosions.RemoveAt(i); i--; continue; }
                 spriteBatch.Draw(e.img, e.pos - e.dim * e.expandAmount / 2, e.img.Bounds, Color.White * e.alphaAmount,
-                    0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.0f);
+                    0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.1f);
             }
+
+            //Draw foreground
+            drawForeground();
 
             //End drawing sprites
             spriteBatch.End();
@@ -379,7 +399,7 @@ namespace Touhou.ExampleSprite
                 //Move the bullet
                 pos += dir * speed * (float)dt;
                 //Return false if bullet off-screen
-                if (pos.X < -50 || pos.X > width + 50 || pos.Y < -50 || pos.Y > height + 50)
+                if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
                 return true;
             }
@@ -419,7 +439,7 @@ namespace Touhou.ExampleSprite
                 //Move the enemy
                 pos += dir * speed * (float)dt;
                 //Return false if enemy off-screen
-                if (pos.X < -50 || pos.X > width + 50 || pos.Y < -50 || pos.Y > height + 50)
+                if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
                 return true;
             }
