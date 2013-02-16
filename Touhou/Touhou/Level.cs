@@ -14,15 +14,15 @@ namespace Touhou
     public class Level
     {
 
-        Texture2D playerTextureFly;
-        Texture2D playerTextureMoveLeft;
-        Texture2D playerTextureStartMoveLeft;
-        Texture2D playerTextureMoveRight;
-        Texture2D playerTextureStartMoveRight;
-
         Texture2D bulletTexture;
 
         Effects.AnimatedTexture playerAnimation;
+
+        List<int> playerAnimationFly = new List<int>();
+        List<int> playerAnimationLeft = new List<int>();
+        List<int> playerAnimationLeftAccel = new List<int>();
+        List<int> playerAnimationRight = new List<int>();
+        List<int> playerAnimationRightAccel = new List<int>();
 
         Song music;
         SoundEffect soundShoot;
@@ -53,15 +53,33 @@ namespace Touhou
             // Load images and sprites
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
 
-            playerTextureFly = game.Content.Load<Texture2D>("reimufly");
-            playerTextureMoveLeft = game.Content.Load<Texture2D>("reimuleft");
-            playerTextureStartMoveLeft = game.Content.Load<Texture2D>("reimumoveleft");
-            playerTextureMoveRight = game.Content.Load<Texture2D>("reimuleft");
-            playerTextureStartMoveRight = game.Content.Load<Texture2D>("reimumoveleft");
+            Texture2D playerAnimationTexture;
+            playerAnimationTexture = game.Content.Load<Texture2D>("reimu");
 
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
 
-            playerAnimation = new Effects.AnimatedTexture(playerTextureFly, playerPosition, 4, 0.1);
+            playerAnimation = new Effects.AnimatedTexture(playerAnimationTexture, playerPosition, 18, 0.1);
+
+            // Create Reimu animation sets
+            int i = 0;
+            for (i = 0; i < 4; i++)
+                this.playerAnimationFly.Add(i);
+            for (i = 4; i <= 6; i++)
+                this.playerAnimationLeftAccel.Add(i);
+            for (i = 7; i <= 10; i++)
+                this.playerAnimationLeft.Add(i);
+            for (i = 13; i >= 11; i--)
+                this.playerAnimationRightAccel.Add(i);
+            for (i = 17; i >= 14; i--)
+                this.playerAnimationRight.Add(i);
+
+            playerAnimation.animationSets.Add("Fly", playerAnimationFly);
+            playerAnimation.animationSets.Add("Left Accel", playerAnimationLeftAccel);
+            playerAnimation.animationSets.Add("Left", playerAnimationLeft);
+            playerAnimation.animationSets.Add("Right Accel", playerAnimationRightAccel);
+            playerAnimation.animationSets.Add("Right", playerAnimationRight);
+
+            playerAnimation.animationSet = "Fly";
 
             // Load other game media
             music = game.Content.Load<Song>("A Soul As Red As Ground Cherry");
@@ -94,14 +112,6 @@ namespace Touhou
             if (keystate.IsKeyDown(Keys.Left))
             {
                 playerVelocity.X += -playerSpeed;
-                if (oldDX == 0.0f)
-                {
-                    playerAnimation.texture = playerTextureStartMoveLeft;
-                    playerAnimation.nextTexture = playerTextureMoveLeft;
-                    playerAnimation.numFrames = 3;
-                    playerAnimation.nextNumFrames = 4;
-                    playerAnimation.resetAnimation();
-                }
             }
             if (keystate.IsKeyDown(Keys.Right))
             {
@@ -116,41 +126,28 @@ namespace Touhou
                 playerVelocity.Y += playerSpeed;
             }
 
-            // Determine player animations based on speed
+            // Animate the player based on velocity
             if (playerVelocity.X < 0.0f)
             {
-                if (playerAnimation.texture != playerTextureStartMoveLeft &&
-                    playerAnimation.texture != playerTextureMoveLeft)
+                // Moving left
+                if (playerAnimation.animationSet != "Left")
                 {
-                    playerAnimation.texture = playerTextureStartMoveLeft;
-                    playerAnimation.nextTexture = playerTextureMoveLeft;
-                    playerAnimation.numFrames = 3;
-                    playerAnimation.nextNumFrames = 4;
-                    playerAnimation.resetAnimation();
+                    playerAnimation.animationSet = "Left Accel";
+                    playerAnimation.nextAnimationSet = "Left";
                 }
             }
             else if (playerVelocity.X > 0.0f)
             {
-                if (playerAnimation.texture != playerTextureStartMoveRight &&
-                    playerAnimation.texture != playerTextureMoveRight)
+                // Moving right
+                if (playerAnimation.animationSet != "Right")
                 {
-                    playerAnimation.texture = playerTextureStartMoveRight;
-                    playerAnimation.nextTexture = playerTextureMoveRight;
-                    playerAnimation.numFrames = 3;
-                    playerAnimation.nextNumFrames = 4;
-                    playerAnimation.resetAnimation();
+                    playerAnimation.animationSet = "Right Accel";
+                    playerAnimation.nextAnimationSet = "Right";
                 }
             }
             else
             {
-                if (playerAnimation.texture != playerTextureFly)
-                {
-                    playerAnimation.texture = playerTextureFly;
-                    playerAnimation.nextTexture = playerTextureFly;
-                    playerAnimation.numFrames = 4;
-                    playerAnimation.nextNumFrames = 4;
-                    playerAnimation.resetAnimation();
-                }
+                playerAnimation.animationSet = "Fly";
             }
 
             //Move the player sprite based on its speed
@@ -160,8 +157,8 @@ namespace Touhou
             playerAnimation.Update(dt);
 
             // Make sure that the player stays on the screen
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, width - playerTextureFly.Width);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, height- playerTextureFly.Height);
+            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, width - playerAnimation.width);
+            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, height- playerAnimation.height);
 
             //Decrease the player firing delay
             if (playerFireWait > 0.0f)
@@ -175,8 +172,8 @@ namespace Touhou
                     playerFireWait = playerFireDelay;
                     // Fire a new player bullet
                     Vector2 bulletPosition;
-                    bulletPosition.X = playerPosition.X + (playerTextureFly.Width - bulletTexture.Width) / 2;
-                    bulletPosition.Y = playerPosition.Y + (playerTextureFly.Height - bulletTexture.Height) / 2;
+                    bulletPosition.X = playerPosition.X + (playerAnimation.width - bulletTexture.Width) / 2;
+                    bulletPosition.Y = playerPosition.Y + (playerAnimation.height - bulletTexture.Height) / 2;
                     Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
                     addBullet(bullet, BulletSet.Player);
                     soundShoot.Play();

@@ -18,6 +18,9 @@ namespace Touhou.Effects
         public Vector2 dimensions;
         public Vector2 position;
 
+        public int width;
+        public int height;
+
         public int numFrames;
         public int frame = 0;
         public double wait;
@@ -25,62 +28,60 @@ namespace Touhou.Effects
 
         int realFrame;
 
-        // List of the frame indices to animate over
-        public List<int> animationFrames;
-        // List of the frame indices to animate over when this current one is finished
-        public List<int> nextAnimationFrames;
-        public int nextNumFrames;
-        public Texture2D nextTexture;
-
         public Rectangle rectangle;
+
+        public Dictionary<string, List<int>> animationSets = new Dictionary<string,List<int>>();
+        string _animationSet = "_default";
+        public string nextAnimationSet = "_default";
+        public List<int> animationSetValue;
 
         public AnimatedTexture(Texture2D texture, Vector2 position, int numFrames, double frameRate)
         {
             this.texture = texture;
-            this.nextTexture = texture;
+            this.width = texture.Width / numFrames;
+            this.height = texture.Height / numFrames;
             this.position = position;
             this.numFrames = numFrames;
-            this.nextNumFrames = numFrames;
             this.delay = this.wait = frameRate;
 
-            resetAnimationList();
-
             this.dimensions = new Vector2(texture.Width / numFrames, texture.Height);
+
+            CreateDefaultAnimationSet();
+            animationSet = "_default";
         }
 
-        public AnimatedTexture(Texture2D texture, Vector2 position, List<int> animationFrames, double frameRate)
+        // Animation Sets are lists that contain indices to represent animations in a spritesheet
+        public string animationSet
         {
-            this.texture = texture;
-            this.nextTexture = texture;
-            this.position = position;
-            this.numFrames = animationFrames.Count;
-            this.nextNumFrames = this.numFrames;
-            this.delay = this.wait = frameRate;
 
-            this.animationFrames = animationFrames;
+            get
+            {
+                return this._animationSet;
+            }
 
-            this.dimensions = new Vector2(texture.Width / numFrames, texture.Height);
+            set
+            {
+                if (this._animationSet != value)
+                {
+                    this._animationSet = value;
+                    frame = 0;
+                    delay = 0.0f;
+                    this.nextAnimationSet = value;
+                    this.animationSetValue = this.animationSets[value];
+                }
+
+            }
+
         }
 
         // Populates the animation lits with a full set of frames
-        public void resetAnimationList()
+        public void CreateDefaultAnimationSet()
         {
-            this.animationFrames = new List<int>();
+            List<int> defaultList = new List<int>();
             int i = 0;
-            for (i = 0; i < numFrames; i++)
-                this.animationFrames.Add(i);
-
-            this.nextAnimationFrames = new List<int>(this.animationFrames);
-
-            resetAnimation();
-        }
-
-        public void resetAnimation()
-        {
-            // Call this if you happen to change the animation frames list
-            frame = 0;
-            delay = wait;
-            rectangle = new Rectangle(0, 0, texture.Width / numFrames, texture.Height);
+            for (i=0; i<numFrames; i++)
+                defaultList.Add(i);
+            animationSets.Add("_default", defaultList);
         }
 
         public void Draw(SpriteBatch spriteBatch)
@@ -94,20 +95,15 @@ namespace Touhou.Effects
             if (delay < 0.0)
             {
                 delay += wait;
-                frame++;
-                if (frame >= numFrames)
+                if (frame == animationSetValue.Count - 1)
                 {
-                    numFrames = nextNumFrames;
-                    if (nextAnimationFrames.Equals(animationFrames))
-                        resetAnimationList();
-                    else
-                        animationFrames = nextAnimationFrames;
-                    texture = nextTexture;
+                    this.animationSet = this.nextAnimationSet;
                     frame = 0;
                 }
-                realFrame = animationFrames[frame];
+                realFrame = animationSetValue[frame];
                 rectangle = new Rectangle(texture.Width * realFrame / numFrames, 0, texture.Width / numFrames, texture.Height);
-                
+
+                frame++;
             }
         }
     }
