@@ -39,7 +39,7 @@ namespace Touhou.Effects
         {
             this.texture = texture;
             this.width = texture.Width / numFrames;
-            this.height = texture.Height / numFrames;
+            this.height = texture.Height;
             this.position = position;
             this.numFrames = numFrames;
             this.delay = this.wait = frameRate;
