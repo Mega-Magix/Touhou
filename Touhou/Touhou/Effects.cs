@@ -23,8 +23,8 @@ namespace Touhou.Effects
 
         public int numFrames;
         public int frame = 0;
-        public double wait;
         public double delay;
+        public double wait;
 
         int realFrame;
 
@@ -42,7 +42,7 @@ namespace Touhou.Effects
             this.height = texture.Height;
             this.position = position;
             this.numFrames = numFrames;
-            this.delay = this.wait = frameRate;
+            this.wait = this.delay = frameRate;
 
             this.dimensions = new Vector2(texture.Width / numFrames, texture.Height);
 
@@ -65,7 +65,7 @@ namespace Touhou.Effects
                 {
                     this._animationSet = value;
                     frame = 0;
-                    delay = 0.0f;
+                    wait = 0.0f;
                     this.nextAnimationSet = value;
                     this.animationSetValue = this.animationSets[value];
                 }
@@ -91,10 +91,10 @@ namespace Touhou.Effects
 
         public void Update(double dt)
         {
-            delay -= dt;
-            if (delay < 0.0)
+            wait -= dt;
+            if (wait < 0.0)
             {
-                delay += wait;
+                wait += delay;
                 if (frame == animationSetValue.Count - 1)
                 {
                     this.animationSet = this.nextAnimationSet;
