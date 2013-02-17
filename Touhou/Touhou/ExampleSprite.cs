@@ -448,8 +448,14 @@ namespace Touhou.ExampleSprite
                 shootDelay -= (float)dt;
                 if (shootDelay <= 0)
                 {
-                    b.Add(new Bullet(t, pos, (float)random.Next(0, 360), 100.0f, Color.White));
-                    shootDelay += 0.5f;
+                    float n = (float)random.Next(0, 360);
+                    b.Add(new Bullet(t, pos, n, 100.0f, Color.White));
+                    b.Add(new Bullet(t, pos, n+60.0f, 100.0f, Color.White));
+                    b.Add(new Bullet(t, pos, n+120.0f, 100.0f, Color.White));
+                    b.Add(new Bullet(t, pos, n+180.0f, 100.0f, Color.White));
+                    b.Add(new Bullet(t, pos, n+240.0f, 100.0f, Color.White));
+                    b.Add(new Bullet(t, pos, n+300.0f, 100.0f, Color.White));
+                    shootDelay += 1.0f;
                 }
             }
         }
