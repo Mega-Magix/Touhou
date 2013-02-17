@@ -18,11 +18,12 @@ namespace Touhou
 
         Effects.AnimatedTexture playerAnimation;
 
-        List<int> playerAnimationFly = new List<int>();
-        List<int> playerAnimationLeft = new List<int>();
-        List<int> playerAnimationLeftAccel = new List<int>();
-        List<int> playerAnimationRight = new List<int>();
-        List<int> playerAnimationRightAccel = new List<int>();
+        // Setup player animation sets
+        List<int> playerAnimationFly = new List<int> {0, 1, 2, 3};
+        List<int> playerAnimationLeft = new List<int> {7, 8, 9, 10};
+        List<int> playerAnimationLeftAccel = new List<int> {4, 5, 6};
+        List<int> playerAnimationRight = new List<int> {17, 16, 15, 14};
+        List<int> playerAnimationRightAccel = new List<int> {13, 12, 11};
 
         Song music;
         SoundEffect soundShoot;
@@ -60,24 +61,15 @@ namespace Touhou
 
             playerAnimation = new Effects.AnimatedTexture(playerAnimationTexture, playerPosition, 18, 0.1);
 
-            // Create Reimu animation sets
-            int i = 0;
-            for (i = 0; i < 4; i++)
-                this.playerAnimationFly.Add(i);
-            for (i = 4; i <= 6; i++)
-                this.playerAnimationLeftAccel.Add(i);
-            for (i = 7; i <= 10; i++)
-                this.playerAnimationLeft.Add(i);
-            for (i = 13; i >= 11; i--)
-                this.playerAnimationRightAccel.Add(i);
-            for (i = 17; i >= 14; i--)
-                this.playerAnimationRight.Add(i);
-
-            playerAnimation.animationSets.Add("Fly", playerAnimationFly);
-            playerAnimation.animationSets.Add("Left Accel", playerAnimationLeftAccel);
-            playerAnimation.animationSets.Add("Left", playerAnimationLeft);
-            playerAnimation.animationSets.Add("Right Accel", playerAnimationRightAccel);
-            playerAnimation.animationSets.Add("Right", playerAnimationRight);
+            // Setup final animation sets
+            playerAnimation.animationSets = new Dictionary<string, List<int>>()
+	        {
+	            {"Fly", playerAnimationFly},
+                {"Left Accel", playerAnimationLeftAccel},
+                {"Left", playerAnimationLeft},
+                {"Right Accel", playerAnimationRightAccel},
+                {"Right", playerAnimationRight},
+	        };
 
             playerAnimation.animationSet = "Fly";
 

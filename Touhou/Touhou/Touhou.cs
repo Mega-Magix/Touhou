@@ -33,16 +33,6 @@ namespace Touhou
             level = new Level(this);
         }
 
-        protected override void LoadContent()
-        {
-            
-        }
-
-        protected override void UnloadContent()
-        {
-            
-        }
-
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)

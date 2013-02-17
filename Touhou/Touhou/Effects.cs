@@ -30,7 +30,7 @@ namespace Touhou.Effects
 
         public Rectangle rectangle;
 
-        public Dictionary<string, List<int>> animationSets = new Dictionary<string,List<int>>();
+        public Dictionary<string, List<int>> _animationSets = new Dictionary<string,List<int>>();
         string _animationSet = "_default";
         public string nextAnimationSet = "_default";
         public List<int> animationSetValue;
@@ -67,11 +67,25 @@ namespace Touhou.Effects
                     frame = 0;
                     wait = 0.0f;
                     this.nextAnimationSet = value;
-                    this.animationSetValue = this.animationSets[value];
+                    this.animationSetValue = this._animationSets[value];
                 }
 
             }
 
+        }
+
+        public Dictionary<string, List<int>> animationSets
+        {
+            get
+            {
+                return this._animationSets;
+            }
+            set
+            {
+                this._animationSets = value;
+                CreateDefaultAnimationSet();
+                this.animationSetValue = this._animationSets[this._animationSet];
+            }
         }
 
         // Populates the animation lits with a full set of frames
@@ -81,7 +95,7 @@ namespace Touhou.Effects
             int i = 0;
             for (i=0; i<numFrames; i++)
                 defaultList.Add(i);
-            animationSets.Add("_default", defaultList);
+            _animationSets.Add("_default", defaultList);
         }
 
         public void Draw(SpriteBatch spriteBatch)
