@@ -33,29 +33,25 @@ namespace Touhou.ExampleSprite
         static List<Bullet> eBullets = new List<Bullet>();
         static List<Enemy> enemies = new List<Enemy>();
 
-        //Arrays and lists for storing texture and animation data
+        //Arrays and lists for storing texture and sound data
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
-                            "enemy2fly","enemy2moveright","enemy2right"};
-        List<Texture2D> textures = new List<Texture2D>();
-        int[] playerTexFrames = { 4, 3, 4 };
-        double[] playerTexSpeeds = { 0.2, 0.1, 0.2 };
-        int[] enemyTexFrames = { 4, 3, 1 };
-        double[] enemyTexSpeeds = { 0.2, 0.1, 1 };
+                            "enemy2fly","enemy2moveright","enemy2right",
+                            "itempower","itempoint",
+                            "bullet1","testbullet",
+                            "explode","explodeblue",
+                            "foreground"
+                            };
+        string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot" };
+
+        static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
+        static Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
+
         static List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
         static List<AnimatedTexture> enemyTextures = new List<AnimatedTexture>();
         static List<Explosion> explosions = new List<Explosion>();
         static AnimatedTexture playerTexture;
-        static Texture2D bulletTexture;
-        static Texture2D bulletTexture1;
-        static SoundEffect playerShoot;
-        static SoundEffect enemyShoot;
         static SoundManager enemyShootManager;
-        static Texture2D playerExplode;
-        static Texture2D enemyExplode;
-        static Texture2D foreground;
-        static SoundEffect enemySound;
-        static SoundEffect deathSound;
         static Song bgm;
 
         static Random random = new Random();
@@ -69,34 +65,22 @@ namespace Touhou.ExampleSprite
             spriteBatch = new SpriteBatch(GraphicsDevice);
             //Load all textures
             for (int i = 0; i < texFiles.Length; i++)
-                textures.Add(Content.Load<Texture2D>(texFiles[i]));
+                textures.Add(texFiles[i], Content.Load<Texture2D>(texFiles[i]));
+            //Load all sounds
+            for (int i = 0; i < soundFiles.Length; i++)
+                sounds.Add(soundFiles[i], Content.Load<SoundEffect>(soundFiles[i]));
             //Create Reimu animations
-            for (int i = 0; i < 3; i++)
-                reimuTextures.Add(new AnimatedTexture(textures[i], playerTexFrames[i], playerTexSpeeds[i]));
+            reimuTextures.Add(new AnimatedTexture(textures["reimufly"], 4, 0.2));
+            reimuTextures.Add(new AnimatedTexture(textures["reimumoveleft"], 3, 0.1));
+            reimuTextures.Add(new AnimatedTexture(textures["reimuleft"], 4, 0.2));
             //Create enemy animations
-            for (int i = 0; i < 3; i++)
-                enemyTextures.Add(new AnimatedTexture(textures[i+3], enemyTexFrames[i], enemyTexSpeeds[i]));
+            enemyTextures.Add(new AnimatedTexture(textures["enemy1fly"], 4, 0.2));
+            enemyTextures.Add(new AnimatedTexture(textures["enemy1moveright"], 3, 0.1));
+            enemyTextures.Add(new AnimatedTexture(textures["enemy1right"], 1, 1));
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
-            //Load player explosion texture
-            playerExplode = Content.Load<Texture2D>("explode");
-            //Load player death sound
-            deathSound = Content.Load<SoundEffect>("death");
-            //Load enemy explosion texture
-            enemyExplode = Content.Load<Texture2D>("explodeblue");
-            //Load enemy explosion sound
-            enemySound = Content.Load<SoundEffect>("explodesound");
-            //Load player bullet texture
-            bulletTexture = Content.Load<Texture2D>("bullet1");
-            //Load player bullet sound
-            playerShoot = Content.Load<SoundEffect>("playershoot");
-            //Load enemy bullet texture
-            bulletTexture1 = Content.Load<Texture2D>("testbullet");
-            //Load enemy bullet sound and create manager
-            enemyShoot = Content.Load<SoundEffect>("enemyshoot");
-            enemyShootManager = new SoundManager(enemyShoot);
-            //Load foregraound texture
-            foreground = Content.Load<Texture2D>("foreground");
+            //Create enemy shot sound manager
+            enemyShootManager = new SoundManager(sounds["enemyshoot"]);
             //Load BGM and play it
             bgm = Content.Load<Song>("Song of the Night Sparrow");
             MediaPlayer.IsRepeating = true; MediaPlayer.Play(bgm);
@@ -160,8 +144,8 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.Z) && firedelay < 0 && playerStatus != PlayerStatus.Dead)
             {
                 //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
-                pBullets.Add(new Bullet(bulletTexture,playerPosition,fireangle, bulletSpeed, Color.White));
-                playerShoot.Play();
+                pBullets.Add(new Bullet(textures["bullet1"],playerPosition,fireangle, bulletSpeed, Color.White));
+                sounds["playershoot"].Play();
                 firedelay += firerate;
             }
             //Angle testing controls
@@ -227,11 +211,11 @@ namespace Touhou.ExampleSprite
 
         public void drawForeground()
         {
-            for (int i = (int)gameDim.X; i < screenDim.X; i += foreground.Width)
+            for (int i = (int)gameDim.X; i < screenDim.X; i += textures["foreground"].Width)
             {
-                for (int j = 0; j < screenDim.Y; j += foreground.Height)
+                for (int j = 0; j < screenDim.Y; j += textures["foreground"].Height)
                 {
-                    spriteBatch.Draw(foreground, new Vector2(i, j), Color.White);
+                    spriteBatch.Draw(textures["foreground"], new Vector2(i, j), Color.White);
                 }
             }
         }
@@ -321,9 +305,24 @@ namespace Touhou.ExampleSprite
         public class Item
         {
             item type;
+            Texture img;
+            Vector2 pos;
+            float speed = -10;
             public Item(item t)
             {
                 type = t;
+                img = textures["item" + t];
+            }
+            public bool update(double dt)
+            {
+                //Cause the item to fall
+                speed += (float)dt * 3;
+                if (speed >= 10.0f) speed = 10.0f;
+                pos.Y += speed;
+                //Return false if item off-screen
+                if (pos.Y > gameDim.Y + 10)
+                    return false;
+                return true;
             }
         }
 
@@ -403,8 +402,8 @@ namespace Touhou.ExampleSprite
                         if (playerStatus == PlayerStatus.Alive)
                         {
                             playerStatus = PlayerStatus.Dead;
-                            deathSound.Play();
-                            explosions.Add(new Explosion(playerExplode, playerPosition,
+                            sounds["death"].Play();
+                            explosions.Add(new Explosion(textures["explode"], playerPosition,
                                 3.0f, Color.White));
                         }
                         //Return false to indicate bullet destruction
@@ -420,9 +419,9 @@ namespace Touhou.ExampleSprite
                             Math.Abs(enemies[i].pos.Y - pos.Y) < enemies[i].dim.Y)
                         //Destroy enemy and bullet upon collision and create explosion
                         {
-                            explosions.Add(new Explosion(enemyExplode, enemies[i].pos,
+                            explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
                                 1.0f, enemies[i].color));
-                            enemySound.Play();
+                            sounds["explodesound"].Play();
                             enemies.RemoveAt(i); i--;
                             return false;
                         }
@@ -466,7 +465,7 @@ namespace Touhou.ExampleSprite
                 //Move the enemy
                 pos += dir * speed * (float)dt;
                 //Have the enemy shoot
-                this.shoot(bulletTexture1, eBullets, dt);
+                this.shoot(textures["testbullet"], eBullets, dt);
                 //Return false if enemy off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
@@ -476,15 +475,15 @@ namespace Touhou.ExampleSprite
                     playerStatus != PlayerStatus.Dead)
                 //Destroy enemy upon collision with player and create explosion
                 {
-                    explosions.Add(new Explosion(enemyExplode, pos,
+                    explosions.Add(new Explosion(textures["explodeblue"], pos,
                         1.0f, color));
-                    enemySound.Play();
+                    sounds["explodesound"].Play();
                     //If the player is alive, kill the player and create large explosion
                     if (playerStatus == PlayerStatus.Alive)
                     {
                         playerStatus = PlayerStatus.Dead;
-                        deathSound.Play();
-                        explosions.Add(new Explosion(playerExplode, playerPosition,
+                        sounds["death"].Play();
+                        explosions.Add(new Explosion(textures["explode"], playerPosition,
                             3.0f, Color.White));
                     }
                     //Return false to indicate enemy destruction
