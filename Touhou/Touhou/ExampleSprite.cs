@@ -49,6 +49,8 @@ namespace Touhou.ExampleSprite
         Texture2D bulletTexture;
         Texture2D bulletTexture1;
         SoundEffect playerShoot;
+        SoundEffect enemyShoot;
+        static SoundManager enemyShootManager;
         Texture2D playerExplode;
         Texture2D enemyExplode;
         Texture2D foreground;
@@ -90,8 +92,9 @@ namespace Touhou.ExampleSprite
             playerShoot = Content.Load<SoundEffect>("playershoot");
             //Load enemy bullet texture
             bulletTexture1 = Content.Load<Texture2D>("testbullet");
-            //Load enemy bullet sound
-            //Not working yet
+            //Load enemy bullet sound and create manager
+            enemyShoot = Content.Load<SoundEffect>("enemyshoot");
+            enemyShootManager = new SoundManager(enemyShoot);
             //Load foregraound texture
             foreground = Content.Load<Texture2D>("foreground");
             //Load BGM and play it
@@ -121,6 +124,7 @@ namespace Touhou.ExampleSprite
         float firedelay = 0.0f;
 
         double dt;
+        
 
         protected override void Update(GameTime gameTime)
         {
@@ -248,16 +252,14 @@ namespace Touhou.ExampleSprite
             }
         }
 
-        
-
-
         protected override void Draw(GameTime gameTime)
         {
             //Window data
             graphics.GraphicsDevice.Clear(Color.MidnightBlue);
             int width = graphics.GraphicsDevice.Viewport.Width;
             int height = graphics.GraphicsDevice.Viewport.Height;
-
+            //Reset sound
+            enemyShootManager.reset();
             // Begin drawing sprites
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //Move and draw player bullets
@@ -364,7 +366,33 @@ namespace Touhou.ExampleSprite
             base.Draw(gameTime);
         }
 
-
+        public class SoundManager
+        {
+            SoundEffectInstance instance1;
+            SoundEffectInstance instance2;
+            int current;
+            bool isPlaying;
+            public SoundManager(SoundEffect s)
+            {
+                instance1 = s.CreateInstance();
+                instance2 = s.CreateInstance();
+            }
+            public void play()
+            {
+                if (!isPlaying)
+                {
+                    isPlaying = true;
+                    if (current == 1)
+                    { current = 2;  instance1.Stop(); instance2.Play(); }
+                    else
+                    { current = 1;  instance2.Stop(); instance1.Play(); }
+                }
+            }
+            public void reset()
+            {
+                isPlaying = false;
+            }
+        }
 
         public class Bullet
         {
@@ -448,6 +476,8 @@ namespace Touhou.ExampleSprite
                 shootDelay -= (float)dt;
                 if (shootDelay <= 0)
                 {
+                    //Play shoot sound
+                    enemyShootManager.play();
                     float n = (float)random.Next(0, 360);
                     b.Add(new Bullet(t, pos, n, 100.0f, Color.White));
                     b.Add(new Bullet(t, pos, n+60.0f, 100.0f, Color.White));
