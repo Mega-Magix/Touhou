@@ -63,6 +63,11 @@ namespace Touhou.ExampleSprite
         static Vector2 foregroundDim;
 
         static SpriteFont font;
+        static SpriteFont fontfps;
+
+        static int frames;
+        static int fps = 0;
+        static float time = 1.0f;
 
         protected override void LoadContent()
         {
@@ -75,6 +80,7 @@ namespace Touhou.ExampleSprite
                 sounds.Add(soundFiles[i], Content.Load<SoundEffect>(soundFiles[i]));
             //Load font
             font = Content.Load<SpriteFont>("SpriteFont1");
+            fontfps = Content.Load<SpriteFont>("SpriteFont2");
             //Create Reimu animations
             reimuTextures.Add(new AnimatedTexture(textures["reimufly"], 4, 0.2));
             reimuTextures.Add(new AnimatedTexture(textures["reimumoveleft"], 3, 0.1));
@@ -100,12 +106,14 @@ namespace Touhou.ExampleSprite
         {
 
         }
+
         //State of keyboard
         KeyboardState keystate;
         //Player and bullet data
         static Vector2 spriteSpeed = Vector2.Zero;
         static Vector2 playerPosition;
-        enum PlayerStatus { Alive, Spawning, Dead };
+        public enum PlayerStatus { Alive, Spawning, Dead };
+        public enum item { Point, Power };
         static PlayerStatus playerStatus = PlayerStatus.Alive;
         float respawnDelay = 3.0f;
         float playerSpeed = 100.0f;
@@ -115,7 +123,11 @@ namespace Touhou.ExampleSprite
         float firedelay = 0.0f;
 
         double dt;
-        
+        SpriteEffects playerEffect = SpriteEffects.None;
+
+
+
+
 
         protected override void Update(GameTime gameTime)
         {
@@ -124,6 +136,13 @@ namespace Touhou.ExampleSprite
 
             //Get elapsed time
             dt = gameTime.ElapsedGameTime.TotalSeconds;
+            //Get framerate
+            frames++;
+            time -= (float)dt;
+            if (time <= 0)
+            {
+                time = 1.0f; fps = frames; frames = 0;
+            }
 
             //Read keyboard input
             this.readInput();
@@ -158,9 +177,6 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.X)) fireangle -= 1.0f;
             if (keystate.IsKeyDown(Keys.C)) fireangle += 1.0f;
         }
-
-        
-        SpriteEffects playerEffect = SpriteEffects.None;
 
         public void drawPlayer()
         {
@@ -228,7 +244,6 @@ namespace Touhou.ExampleSprite
 
         double spawnDelay1 = 0.0;
         double spawnDelay2 = 5.0;
-
         public void spawnEnemies(double dt)
         {
             spawnDelay1 -= dt;
@@ -319,12 +334,18 @@ namespace Touhou.ExampleSprite
             //Draw foreground
             drawForeground();
 
+            //Draw framerate
+            spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
+
             //End drawing sprites
             spriteBatch.End();
             base.Draw(gameTime);
         }
 
-        public enum item {Point, Power};
+
+
+
+
 
         public class Item
         {
@@ -363,7 +384,6 @@ namespace Touhou.ExampleSprite
                 return true;
             }
         }
-
 
         public class SoundManager
         {
@@ -472,7 +492,6 @@ namespace Touhou.ExampleSprite
                 return true;
             }
         }
-        
 
         public class Enemy
         {
