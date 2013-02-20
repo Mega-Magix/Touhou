@@ -314,7 +314,7 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < scoreTexts.Count; i++)
             {
                 ScoreText t = scoreTexts[i];
-                spriteBatch.DrawString(font, t.score.ToString(), t.pos, Color.White);
+                spriteBatch.DrawString(font, t.score.ToString(), t.pos, t.color);
                 //Remove text after 1 sec.
                 if (!t.update(dt))
                 { scoreTexts.RemoveAt(i); i--; continue; }
@@ -371,13 +371,20 @@ namespace Touhou.ExampleSprite
                 if (pos.Y > gameDim.Y + 10)
                     return false;
                 //Check for item collisions with player (but only if the player is not dead)
-                if (Math.Abs(pos.X - playerPosition.X) < dim.X &&
-                    Math.Abs(pos.Y - playerPosition.Y) < dim.Y &&
+                if (Math.Abs(pos.X - playerPosition.X) < playerTexture.dim.X - 10 &&
+                    Math.Abs(pos.Y - playerPosition.Y) < playerTexture.dim.Y - 20 &&
                     playerStatus != PlayerStatus.Dead)
                 //Destroy item upon collision with player and create text
                 {
                     sounds["item"].Play();
-                    scoreTexts.Add(new ScoreText(10000, pos));
+                    if (type == item.Power)
+                        scoreTexts.Add(new ScoreText(10, pos, Color.White));
+                    else
+                    {
+                        if (playerPosition.Y < 150)
+                            scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
+                        else scoreTexts.Add(new ScoreText(100000 - (int)playerPosition.Y * 100, pos, Color.White));
+                    }
                     //Return false to indicate item destruction
                     return false;
                 }
@@ -586,10 +593,11 @@ namespace Touhou.ExampleSprite
         {
             public int score;
             public Vector2 pos;
+            public Color color;
             public float time = 1.5f;
-            public ScoreText(int s, Vector2 p)
+            public ScoreText(int s, Vector2 p, Color c)
             {
-                score = s; pos = p;
+                score = s; pos = p; color = c;
             }
             public bool update(double dt)
             {
