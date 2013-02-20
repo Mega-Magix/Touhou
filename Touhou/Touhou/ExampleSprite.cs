@@ -69,6 +69,9 @@ namespace Touhou.ExampleSprite
         static int fps = 0;
         static float time = 1.0f;
 
+        static int score = 0;
+        static int power = 0;
+
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -237,7 +240,8 @@ namespace Touhou.ExampleSprite
             {
                 for (int j = 0; j < screenDim.Y; j += textures["foreground"].Height)
                 {
-                    spriteBatch.Draw(textures["foreground"], new Vector2(i, j), Color.White);
+                    spriteBatch.Draw(textures["foreground"], new Vector2(i, j), textures["foreground"].Bounds,
+                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.05f);
                 }
             }
         }
@@ -314,7 +318,7 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < scoreTexts.Count; i++)
             {
                 ScoreText t = scoreTexts[i];
-                spriteBatch.DrawString(font, t.score.ToString(), t.pos, t.color);
+                spriteBatch.DrawString(font, t.amount.ToString(), t.pos, t.color);
                 //Remove text after 1 sec.
                 if (!t.update(dt))
                 { scoreTexts.RemoveAt(i); i--; continue; }
@@ -333,6 +337,10 @@ namespace Touhou.ExampleSprite
 
             //Draw foreground
             drawForeground();
+
+            //Draw score and power
+            spriteBatch.DrawString(fontfps, "Score: " + score.ToString(), new Vector2(500, 50), Color.White);
+            spriteBatch.DrawString(fontfps, "Power: " + power.ToString(), new Vector2(500, 80), Color.White);
 
             //Draw framerate
             spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
@@ -378,7 +386,10 @@ namespace Touhou.ExampleSprite
                 {
                     sounds["item"].Play();
                     if (type == item.Power)
+                    {
                         scoreTexts.Add(new ScoreText(10, pos, Color.White));
+                        power++;
+                    }
                     else
                     {
                         if (playerPosition.Y < 150)
@@ -468,6 +479,7 @@ namespace Touhou.ExampleSprite
                         {
                             playerStatus = PlayerStatus.Dead;
                             sounds["death"].Play();
+                            power = 0;
                             explosions.Add(new Explosion(textures["explode"], playerPosition,
                                 3.0f, Color.White));
                         }
@@ -486,6 +498,7 @@ namespace Touhou.ExampleSprite
                         {
                             explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
                                 1.0f, enemies[i].color));
+                            score += 1000;
                             if (random.Next(2) == 0)
                                 items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
                             else
@@ -551,6 +564,7 @@ namespace Touhou.ExampleSprite
                     {
                         playerStatus = PlayerStatus.Dead;
                         sounds["death"].Play();
+                        power = 0;
                         explosions.Add(new Explosion(textures["explode"], playerPosition,
                             3.0f, Color.White));
                     }
@@ -591,13 +605,15 @@ namespace Touhou.ExampleSprite
 
         public class ScoreText
         {
-            public int score;
+            public int amount;
             public Vector2 pos;
             public Color color;
             public float time = 1.5f;
             public ScoreText(int s, Vector2 p, Color c)
             {
-                score = s; pos = p; color = c;
+                amount = s; pos = p; color = c;
+                score += amount;
+
             }
             public bool update(double dt)
             {
