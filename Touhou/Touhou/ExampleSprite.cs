@@ -38,7 +38,7 @@ namespace Touhou.ExampleSprite
                             "enemy1fly","enemy1moveright","enemy1right",
                             "enemy2fly","enemy2moveright","enemy2right",
                             "itempower","itempoint",
-                            "bullet1","testbullet",
+                            "bullet1","bullet2","testbullet",
                             "explode","explodeblue",
                             "foreground"
                             };
@@ -117,13 +117,16 @@ namespace Touhou.ExampleSprite
         static Vector2 playerPosition;
         public enum PlayerStatus { Alive, Spawning, Dead };
         public enum item { Point, Power };
+        public enum bulletType { Normal, Directional, Animated, Homing, Spinning, Laser }
         static PlayerStatus playerStatus = PlayerStatus.Alive;
-        float respawnDelay = 3.0f;
-        float playerSpeed = 100.0f;
-        float bulletSpeed = 750.0f;
-        float fireangle = 0.0f;
-        float firerate = 0.1f;
-        float firedelay = 0.0f;
+        static float respawnDelay = 3.0f;
+        static float playerSpeed = 100.0f;
+        static float firerate1 = 0.1f;
+        static float firerate2 = 0.5f;
+        static float firedelay1 = 0.0f;
+        static float firedelay2 = 0.0f;
+        static int fireamount1 = 1;
+        static int fireamount2 = 1;
 
         double dt;
         SpriteEffects playerEffect = SpriteEffects.None;
@@ -164,21 +167,27 @@ namespace Touhou.ExampleSprite
             keystate = Keyboard.GetState();
             //Read keyboard input
             spriteSpeed = Vector2.Zero;
-            if (firedelay >= 0) firedelay -= (float)dt;
+            if (firedelay1 >= 0) firedelay1 -= (float)dt;
+            if (firedelay2 >= 0) firedelay2 -= (float)dt;
             if (keystate.IsKeyDown(Keys.Left)) spriteSpeed.X -= playerSpeed;
             if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X += playerSpeed;
             if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y -= playerSpeed;
             if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += playerSpeed;
-            if (keystate.IsKeyDown(Keys.Z) && firedelay < 0 && playerStatus != PlayerStatus.Dead)
+            if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && playerStatus != PlayerStatus.Dead)
             {
                 //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
-                pBullets.Add(new Bullet(textures["bullet1"],playerPosition,fireangle, bulletSpeed, Color.White));
+                pBullets.Add(new Bullet(textures["bullet1"],playerPosition,
+                    0.0f, 750.0f, Color.White, bulletType.Directional));
                 sounds["playershoot"].Play();
-                firedelay += firerate;
+                firedelay1 += firerate1;
             }
-            //Angle testing controls
-            if (keystate.IsKeyDown(Keys.X)) fireangle -= 1.0f;
-            if (keystate.IsKeyDown(Keys.C)) fireangle += 1.0f;
+            if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && playerStatus != PlayerStatus.Dead)
+            {
+                //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
+                pBullets.Add(new Bullet(textures["bullet2"], playerPosition,
+                    30.0f, 500.0f, Color.White, bulletType.Homing));
+                firedelay2 += firerate2;
+            }
         }
 
         public void drawPlayer()
@@ -241,13 +250,13 @@ namespace Touhou.ExampleSprite
                 for (int j = 0; j < screenDim.Y; j += textures["foreground"].Height)
                 {
                     spriteBatch.Draw(textures["foreground"], new Vector2(i, j), textures["foreground"].Bounds,
-                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.05f);
+                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.01f);
                 }
             }
         }
 
         double spawnDelay1 = 0.0;
-        double spawnDelay2 = 5.0;
+        double spawnDelay2 = 15.0;
         public void spawnEnemies(double dt)
         {
             spawnDelay1 -= dt;
@@ -259,7 +268,7 @@ namespace Touhou.ExampleSprite
             }
             if (spawnDelay2 <= 0)
             {
-                spawnDelay2 += 5.0;
+                spawnDelay2 += 15.0;
             }
         }
 
@@ -277,7 +286,12 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < pBullets.Count; i++)
             {
                 Bullet b = pBullets[i];
-                spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.color);
+                if (b.type == bulletType.Normal)
+                    spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
+                    Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.4f);
+                else
+                    spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
+                    Color.White, MathHelper.ToRadians(b.angle+90), Vector2.Zero, 1.0f, SpriteEffects.None, 0.4f);
                 //Remove bullet if off-screen
                 if (!b.update(dt,"enemies"))
                 { pBullets.RemoveAt(i); i--; continue; }
@@ -299,8 +313,12 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < eBullets.Count; i++)
             {
                 Bullet b = eBullets[i];
-                spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds, b.color, 0.0f,
-                    Vector2.Zero, 1.0f, SpriteEffects.None, 0.2f);
+                if (b.type == bulletType.Normal)
+                    spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
+                    Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.2f);
+                else
+                    spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
+                    Color.White, MathHelper.ToRadians(b.angle + 90), Vector2.Zero, 1.0f, SpriteEffects.None, 0.2f);
                 //Remove bullet if off-screen
                 if (!b.update(dt,"player"))
                 { eBullets.RemoveAt(i); i--; continue; }
@@ -309,7 +327,8 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < items.Count; i++)
             {
                 Item x = items[i];
-                spriteBatch.Draw(x.img, x.pos - x.dim / 2, Color.White);
+                spriteBatch.Draw(x.img, x.pos - x.dim / 2, x.img.Bounds, Color.White, 0.0f,
+                    Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
                 //Remove item if off-screen
                 if (!x.update(dt))
                 { items.RemoveAt(i); i--; continue; }
@@ -332,7 +351,7 @@ namespace Touhou.ExampleSprite
                 if (e.alphaAmount <= 0)
                 { explosions.RemoveAt(i); i--; continue; }
                 spriteBatch.Draw(e.img, e.pos - e.dim * e.expandAmount / 2, e.img.Bounds, Color.White * e.alphaAmount,
-                    0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.1f);
+                    0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.05f);
             }
 
             //Draw foreground
@@ -443,19 +462,20 @@ namespace Touhou.ExampleSprite
             public Color color;
             public float hitRadius;
             public String collision;
+            public bulletType type;
             //Constructor given angular direction
-            public Bullet(Texture2D t, Vector2 p, float a, float s, Color c)
+            public Bullet(Texture2D t, Vector2 p, float a, float s, Color c, bulletType ty)
             {
-                img = t; pos = p; angle = a-90.0f; speed = s;
+                img = t; pos = p; angle = a - 90.0f; speed = s; type = ty;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
                 dim = new Vector2(img.Width, img.Height);
                 color = c;
             }
             //Constructor given vector direction
-            public Bullet(Texture2D t, Vector2 p, Vector2 d, Color c)
+            public Bullet(Texture2D t, Vector2 p, Vector2 d, Color c, bulletType ty)
             {
-                img = t; pos = p; dir = d;
+                img = t; pos = p; dir = d; type = ty;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X))+90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
             }
@@ -464,6 +484,31 @@ namespace Touhou.ExampleSprite
             {
                 //Move the bullet
                 pos += dir * speed * (float)dt;
+                if (type == bulletType.Homing)
+                {
+                    float minDist = 10000.0f;
+                    float minAngle = 0.0f;
+                    for (int i = 0; i < enemies.Count; i++)
+                    {
+                        float dist = (float)Math.Sqrt((enemies[i].pos.X - pos.X) * (enemies[i].pos.X - pos.X) + 
+                            (enemies[i].pos.Y - pos.Y) * (enemies[i].pos.Y - pos.Y));
+                        if (dist < minDist)
+                        {
+                            minAngle = MathHelper.ToDegrees((float)Math.Atan2((enemies[i].pos.Y - pos.Y),
+                                (enemies[i].pos.X - pos.X)));
+                            minDist = dist;
+                        }
+                    }
+                    if (minDist != 10000.0f)
+                    {
+                        if (Math.Abs(minAngle - angle) < 10)
+                            angle = minAngle;
+                        else angle -= 10 * Math.Sign(angle - minAngle);
+                        radians = MathHelper.ToRadians(angle);
+                        dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+                    }
+                }
+
                 //Return false if bullet off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
@@ -581,7 +626,7 @@ namespace Touhou.ExampleSprite
                     //Play shoot sound
                     enemyShootManager.play();
                     float n = (float)random.Next(0, 360);
-                    b.Add(new Bullet(t, pos, n, 100.0f, Color.White));
+                    b.Add(new Bullet(t, pos, n, 100.0f, Color.White, bulletType.Normal));
                     shootDelay += 1.0f;
                 }
             }
