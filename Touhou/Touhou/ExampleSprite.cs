@@ -186,6 +186,8 @@ namespace Touhou.ExampleSprite
                 //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
                 pBullets.Add(new Bullet(textures["bullet2"], playerPosition,
                     30.0f, 500.0f, Color.White, bulletType.Homing));
+                pBullets.Add(new Bullet(textures["bullet2"], playerPosition,
+                    -30.0f, 500.0f, Color.White, bulletType.Homing));
                 firedelay2 += firerate2;
             }
         }
@@ -264,7 +266,7 @@ namespace Touhou.ExampleSprite
             if (spawnDelay1 <= 0)
             {
                 spawnDelay1 += 0.5; enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
-                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue));
+                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue, 3));
             }
             if (spawnDelay2 <= 0)
             {
@@ -539,17 +541,22 @@ namespace Touhou.ExampleSprite
                     {
                         if (Math.Abs(enemies[i].pos.X - pos.X) < enemies[i].dim.X &&
                             Math.Abs(enemies[i].pos.Y - pos.Y) < enemies[i].dim.Y)
-                        //Destroy enemy and bullet upon collision and create explosion and item
                         {
-                            explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
-                                1.0f, enemies[i].color));
-                            score += 1000;
-                            if (random.Next(2) == 0)
-                                items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
-                            else
-                                items.Add(new Item(item.Power, textures["itempower"], enemies[i].pos));
-                            sounds["explodesound"].Play();
-                            enemies.RemoveAt(i); i--;
+                            //Destroy bullet and damage enemy
+                            enemies[i].health--;
+                            if (enemies[i].health <= 0)
+                            {
+                                //Destroy enemy and create explosion and item
+                                explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
+                                    1.0f, enemies[i].color));
+                                score += 1000;
+                                if (random.Next(2) == 0)
+                                    items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
+                                else
+                                    items.Add(new Item(item.Power, textures["itempower"], enemies[i].pos));
+                                sounds["explodesound"].Play();
+                                enemies.RemoveAt(i); i--;
+                            }
                             return false;
                         }
                     }
@@ -569,19 +576,20 @@ namespace Touhou.ExampleSprite
             public float radians;
             public Color color;
             public float shootDelay = 0.0f;
+            public int health;
             public SpriteEffects effect = SpriteEffects.None;
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h)
             {
-                img = t; pos = p; angle = a - 90.0f; speed = s;
+                img = t; pos = p; angle = a - 90.0f; speed = s; health = h;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
                 dim = img.dim; color = c;
             }
             //Constructor given vector direction
-            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c)
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h)
             {
-                img = t; pos = p; dir = d;
+                img = t; pos = p; dir = d; health = h;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
             }
