@@ -750,7 +750,7 @@ namespace Touhou.ExampleSprite
             for (int i = -60; i <= 60; i += 30)
             {
                 l.Add(new Bullet(textures["testbullet2"], pos, a + i,
-                    100, Color.White, bulletType.Normal));
+                    100, Color.White, bulletType.Directional));
             }
             return l;
         }
