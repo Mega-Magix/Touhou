@@ -40,7 +40,7 @@ namespace Touhou.ExampleSprite
                             "itempower","itempoint",
                             "bullet1","bullet2","testbullet","testbullet2",
                             "explode","explodeblue",
-                            "foreground"
+                            "foreground","sky"
                             };
         string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage" };
 
@@ -65,9 +65,7 @@ namespace Touhou.ExampleSprite
         static SpriteFont font;
         static SpriteFont fontfps;
 
-        static int frames;
         static int fps = 0;
-        static float time = 1.0f;
 
         static int score = 0;
         static int power = 0;
@@ -101,7 +99,7 @@ namespace Touhou.ExampleSprite
             //Create enemy shot sound manager
             enemyShootManager = new SoundManager(sounds["enemyshoot"]);
             //Load BGM and play it
-            bgm = Content.Load<Song>("Song of the Night Sparrow");
+            bgm = Content.Load<Song>("Fall of Fall");
             MediaPlayer.IsRepeating = true; MediaPlayer.Play(bgm);
             //Set screen boundaries
             screenDim = new Vector2(GraphicsDevice.DisplayMode.Width, GraphicsDevice.DisplayMode.Height);
@@ -147,12 +145,7 @@ namespace Touhou.ExampleSprite
             //Get elapsed time
             dt = gameTime.ElapsedGameTime.TotalSeconds;
             //Get framerate
-            frames++;
-            time -= (float)dt;
-            if (time <= 0)
-            {
-                time = 1.0f; fps = frames; frames = 0;
-            }
+            fps = (int)(1.0 / dt) + 1;
 
             //Read keyboard input
             this.readInput();
@@ -288,13 +281,15 @@ namespace Touhou.ExampleSprite
         protected override void Draw(GameTime gameTime)
         {
             //Window data
-            graphics.GraphicsDevice.Clear(Color.MidnightBlue);
             int width = graphics.GraphicsDevice.Viewport.Width;
             int height = graphics.GraphicsDevice.Viewport.Height;
             //Reset sound
             enemyShootManager.reset();
             // Begin drawing sprites
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
+            //Draw bg
+            spriteBatch.Draw(textures["sky"], Vector2.Zero, textures["sky"].Bounds,
+                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
             //Move and draw player bullets
             for (int i = 0; i < pBullets.Count; i++)
             {
