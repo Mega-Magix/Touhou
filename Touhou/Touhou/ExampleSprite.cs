@@ -38,11 +38,11 @@ namespace Touhou.ExampleSprite
                             "enemy1fly","enemy1moveright","enemy1right",
                             "enemy2fly","enemy2moveright","enemy2right",
                             "itempower","itempoint",
-                            "bullet1","bullet2","testbullet",
+                            "bullet1","bullet2","testbullet","testbullet2",
                             "explode","explodeblue",
                             "foreground"
                             };
-        string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item" };
+        string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage" };
 
         static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
         static Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
@@ -88,10 +88,14 @@ namespace Touhou.ExampleSprite
             reimuTextures.Add(new AnimatedTexture(textures["reimufly"], 4, 0.2));
             reimuTextures.Add(new AnimatedTexture(textures["reimumoveleft"], 3, 0.1));
             reimuTextures.Add(new AnimatedTexture(textures["reimuleft"], 4, 0.2));
-            //Create enemy animations
+            //Create blue enemy animations
             enemyTextures.Add(new AnimatedTexture(textures["enemy1fly"], 4, 0.2));
             enemyTextures.Add(new AnimatedTexture(textures["enemy1moveright"], 3, 0.1));
             enemyTextures.Add(new AnimatedTexture(textures["enemy1right"], 1, 1));
+            //Create red enemy animations
+            enemyTextures.Add(new AnimatedTexture(textures["enemy2fly"], 4, 0.2));
+            enemyTextures.Add(new AnimatedTexture(textures["enemy2moveright"], 3, 0.1));
+            enemyTextures.Add(new AnimatedTexture(textures["enemy2right"], 1, 1));
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
             //Create enemy shot sound manager
@@ -128,8 +132,8 @@ namespace Touhou.ExampleSprite
         static int fireamount1 = 1;
         static int fireamount2 = 1;
 
-        double dt;
-        SpriteEffects playerEffect = SpriteEffects.None;
+        static double dt;
+        static SpriteEffects playerEffect = SpriteEffects.None;
 
 
 
@@ -153,7 +157,7 @@ namespace Touhou.ExampleSprite
             //Read keyboard input
             this.readInput();
             //Spawn enemies randomly
-            this.spawnEnemies(dt);
+            this.spawnEnemies();
             //Move and draw sprites
             this.Draw(gameTime);
 
@@ -236,11 +240,11 @@ namespace Touhou.ExampleSprite
                 if (playerStatus == PlayerStatus.Spawning)
                     //Make player flash if spawning
                     spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2,
-                    playerTexture.getFrame(dt), Color.White * trans[(int)(respawnDelay * 2 % 2.0f)], 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
+                    playerTexture.getFrame(), Color.White * trans[(int)(respawnDelay * 2 % 2.0f)], 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
                 else
                     //Draw player normally if alive
                     spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2, 
-                    playerTexture.getFrame(dt), Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
+                    playerTexture.getFrame(), Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
             }
 
         }
@@ -259,18 +263,25 @@ namespace Touhou.ExampleSprite
 
         double spawnDelay1 = 0.0;
         double spawnDelay2 = 15.0;
-        public void spawnEnemies(double dt)
+        public void spawnEnemies()
         {
             spawnDelay1 -= dt;
             spawnDelay2 -= dt;
             if (spawnDelay1 <= 0)
             {
-                spawnDelay1 += 0.5; enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
-                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue, 3));
+                spawnDelay1 += 0.5; enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[3]),
+                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue, 3, 1
+                   ));
             }
             if (spawnDelay2 <= 0)
             {
                 spawnDelay2 += 15.0;
+                int n = random.Next(50, 150);
+                for (int i = 0; i < 3; i++)
+                {
+                    enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
+                       new Vector2(n+100*i, -30), 180.0f, 50.0f, Color.Blue, 6, 2));
+                }
             }
         }
 
@@ -295,7 +306,7 @@ namespace Touhou.ExampleSprite
                     spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
                     Color.White, MathHelper.ToRadians(b.angle+90), Vector2.Zero, 1.0f, SpriteEffects.None, 0.4f);
                 //Remove bullet if off-screen
-                if (!b.update(dt,"enemies"))
+                if (!b.update("enemies"))
                 { pBullets.RemoveAt(i); i--; continue; }
             }
 
@@ -306,9 +317,9 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < enemies.Count; i++)
             {
                 Enemy e = enemies[i];
-                spriteBatch.Draw(e.img.img, e.pos - e.dim / 2, e.img.getFrame(dt),
+                spriteBatch.Draw(e.img.img, e.pos - e.dim / 2, e.img.getFrame(),
                 Color.White, 0.0f, Vector2.Zero, 1.0f, e.effect, 0.3f);
-                if (!e.update(dt))
+                if (!e.update())
                 { enemies.RemoveAt(i); i--; continue; }
             }
             //Move and draw enemy bullets
@@ -322,7 +333,7 @@ namespace Touhou.ExampleSprite
                     spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
                     Color.White, MathHelper.ToRadians(b.angle + 90), Vector2.Zero, 1.0f, SpriteEffects.None, 0.2f);
                 //Remove bullet if off-screen
-                if (!b.update(dt,"player"))
+                if (!b.update("player"))
                 { eBullets.RemoveAt(i); i--; continue; }
             }
             //Move and draw items
@@ -332,7 +343,7 @@ namespace Touhou.ExampleSprite
                 spriteBatch.Draw(x.img, x.pos - x.dim / 2, x.img.Bounds, Color.White, 0.0f,
                     Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
                 //Remove item if off-screen
-                if (!x.update(dt))
+                if (!x.update())
                 { items.RemoveAt(i); i--; continue; }
             }
             //Move and draw score texts
@@ -341,7 +352,7 @@ namespace Touhou.ExampleSprite
                 ScoreText t = scoreTexts[i];
                 spriteBatch.DrawString(font, t.amount.ToString(), t.pos, t.color);
                 //Remove text after 1 sec.
-                if (!t.update(dt))
+                if (!t.update())
                 { scoreTexts.RemoveAt(i); i--; continue; }
             }
             //Update and draw explosions
@@ -390,7 +401,7 @@ namespace Touhou.ExampleSprite
                 img = i;
                 dim = new Vector2(img.Width, img.Height);
             }
-            public bool update(double dt)
+            public bool update()
             {
                 //Cause the item to fall
                 speed += (float)dt;
@@ -482,7 +493,7 @@ namespace Touhou.ExampleSprite
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
             }
             //Update method to move the bullet and check for collisions
-            public bool update(double dt, String c)
+            public bool update(String c)
             {
                 //Move the bullet
                 pos += dir * speed * (float)dt;
@@ -544,6 +555,7 @@ namespace Touhou.ExampleSprite
                         {
                             //Destroy bullet and damage enemy
                             enemies[i].health--;
+                            sounds["damage"].Play();
                             if (enemies[i].health <= 0)
                             {
                                 //Destroy enemy and create explosion and item
@@ -575,31 +587,37 @@ namespace Touhou.ExampleSprite
             public float angle;
             public float radians;
             public Color color;
-            public float shootDelay = 0.0f;
             public int health;
             public SpriteEffects effect = SpriteEffects.None;
+            public int script;
+            public float sDelay = 0.0f;
+            public float sRate = 1.0f;
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, int scr)
             {
-                img = t; pos = p; angle = a - 90.0f; speed = s; health = h;
+                img = t; pos = p; angle = a - 90.0f; speed = s; health = h; script = scr;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
                 dim = img.dim; color = c;
             }
             //Constructor given vector direction
-            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h)
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, int scr)
             {
-                img = t; pos = p; dir = d; health = h;
+                img = t; pos = p; dir = d; health = h; script = scr;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
             }
             //Update method to move the enemy and check for collisions
-            public bool update(double dt)
+            public bool update()
             {
                 //Move the enemy
                 pos += dir * speed * (float)dt;
                 //Have the enemy shoot
-                this.shoot(textures["testbullet"], eBullets, dt);
+                sDelay -= (float)dt;
+                if (sDelay <= 0)
+                {
+                    eBullets.AddRange(this.shoot()); enemyShootManager.play(); sDelay += sRate;
+                }
                 //Return false if enemy off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
@@ -626,17 +644,14 @@ namespace Touhou.ExampleSprite
                 }
                 return true;
             }
-            public void shoot(Texture2D t, List<Bullet> b, double dt)
+            public List<Bullet> shoot()
             {
-                shootDelay -= (float)dt;
-                if (shootDelay <= 0)
+                switch (script)
                 {
-                    //Play shoot sound
-                    enemyShootManager.play();
-                    float n = (float)random.Next(0, 360);
-                    b.Add(new Bullet(t, pos, n, 100.0f, Color.White, bulletType.Normal));
-                    shootDelay += 1.0f;
+                    case 1: return shoot1(pos);
+                    case 2: return shoot2(pos);
                 }
+                return null;
             }
         }
 
@@ -668,7 +683,7 @@ namespace Touhou.ExampleSprite
                 score += amount;
 
             }
-            public bool update(double dt)
+            public bool update()
             {
                 pos.Y -= (float)dt * 10;
                 time -= (float)dt;
@@ -699,7 +714,7 @@ namespace Touhou.ExampleSprite
                 dim = a.dim;
             }
             //Gets a rectangle representing the frame to be drawn. Needs to be called each update
-            public Rectangle getFrame(double dt)
+            public Rectangle getFrame()
             {
                 delay -= dt;
                 if (delay < 0.0)
@@ -717,5 +732,29 @@ namespace Touhou.ExampleSprite
                 return willfinish;
             }
         }
+
+
+        public static List<Bullet> shoot1(Vector2 pos)
+        {
+            List<Bullet> l = new List<Bullet>();
+            l.Add(new Bullet(textures["testbullet"], pos, random.Next(0, 360),
+                100.0f, Color.White, bulletType.Normal));
+            return l;
+        }
+
+        public static List<Bullet> shoot2(Vector2 pos)
+        {
+            List<Bullet> l = new List<Bullet>();
+            float a = -MathHelper.ToDegrees((float)Math.Atan2(pos.X - playerPosition.X,
+                pos.Y - playerPosition.Y));
+            for (int i = -60; i <= 60; i += 30)
+            {
+                l.Add(new Bullet(textures["testbullet2"], pos, a + i,
+                    100, Color.White, bulletType.Normal));
+            }
+            return l;
+        }
+    
+    
     }
 }
