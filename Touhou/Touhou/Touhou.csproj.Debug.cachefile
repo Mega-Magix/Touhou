@@ -1,5 +1,5 @@
-Content\reimu.xnb
 Content\bullet1.xnb
+Content\reimu.xnb
 Content\reimufly.xnb
 Content\reimumoveleft.xnb
 Content\reimuleft.xnb
@@ -14,23 +14,23 @@ Content\enemy2fly.xnb
 Content\enemy2moveright.xnb
 Content\enemy2right.xnb
 Content\explode.xnb
-Content\explodesound.xnb
 Content\explodeblue.xnb
+Content\explodesound.xnb
 Content\death.xnb
 Content\testbullet.xnb
-Content\Song of the Night Sparrow.xnb
 Content\foreground.xnb
+Content\Song of the Night Sparrow.xnb
 Content\enemyshoot.xnb
 Content\itempoint.xnb
 Content\itempower.xnb
+Content\bullet2.xnb
+Content\testbullet2.xnb
+Content\sky.xnb
+Content\Fall of Fall.xnb
 Content\item.xnb
+Content\damage.xnb
 Content\SpriteFont1.xnb
 Content\SpriteFont2.xnb
-Content\bullet2.xnb
-Content\damage.xnb
-Content\testbullet2.xnb
-Content\Fall of Fall.xnb
-Content\sky.xnb
 Content\A Soul As Red As Ground Cherry.wma
 Content\Song of the Night Sparrow.wma
 Content\Fall of Fall.wma
