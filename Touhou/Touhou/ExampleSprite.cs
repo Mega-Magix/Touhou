@@ -828,16 +828,20 @@ namespace Touhou.ExampleSprite
             int[] cutin = { 0, 0 };
             char[] delimiters = { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
             Vector2 textboxScale = new Vector2(1.0f, 0.0f);
+            //Initializer taking the conversation data list
             public Conversation(string[] c)
             {
                 conv = c;
                 if (keystate.IsKeyDown(Keys.Z)) next = true;
             }
+            //Draws the conversation
             public bool show()
             {
+                //Opens up the text box at the beginning
                 if (textboxScale.Y < 1.0f) textboxScale.Y += 0.02f;
                 else
                 {
+                    //When finished opening, draw conversation text and images
                     textboxScale.Y = 1.0f; return this.showConv();
                 }
                 spriteBatch.Draw(textures["textbox"], new Vector2(10, 400), textures["textbox"].Bounds,
@@ -846,52 +850,71 @@ namespace Touhou.ExampleSprite
             }
             private bool showConv()
             {
+                //Programming detecting only when the Z key is pressed from being up
                 if (keystate.IsKeyDown(Keys.Z))
                 {
+                    //Moves to the next line when Z is pressed
                     if (!next) line++;
                     next = true;
                 }
                 else next = false;
+                //Ends conversation if all lines have been read
                 if (line >= conv.Length) return false;
+
+                //Lines starting with "-" denote an image change
                 if (conv[line].StartsWith("-"))
                 {
+                    //Finds the character the image belongs to
                     talk = conv[line].Split(delimiters)[1];
+                    //Puts the character into the appropriate conversation spot if this is their first time talking
                     if (characters[0] == null) characters[0] = talk;
                     else if (characters[1] == null) characters[1] = talk;
-                    if (characters[0] == conv[line].Split(delimiters)[1])
+                    //Finds the conversation spot of the talking character and changes their image
+                    if (characters[0] == talk)
                         images[0] = textures[conv[line].Substring(1)];
-                    else if (characters[1] == conv[line].Split(delimiters)[1])
+                    else if (characters[1] == talk)
                         images[1] = textures[conv[line].Substring(1)];
+                    //Moves to the next line and continues the conversation
                     line++; this.showConv(); return true;
                 }
+                //Lines starting with "*" denote a special command
                 else if (conv[line].StartsWith("*"))
                 {
+                    //Right now I don't have commands made, so I'm just printing what would happen
                     Console.WriteLine(conv[line].Substring(1)); line++; this.showConv(); return true;
                 }
                 else
                 {
+                    //Determines how character images should move based on who's talking
                     if (talk == characters[0]) move = 1;
                     else move = -1;
+                    //Moves character images
                     pos[0] += move;
                     pos[1] += move;
                     pos[0] = (int)MathHelper.Clamp(pos[0], -10, 0);
                     pos[1] = (int)MathHelper.Clamp(pos[1], 0, 10);
+                    //Draws the left side character image
                     if (images[0] != null)
                     {
                         spriteBatch.Draw(images[0], new Vector2(pos[0], gameDim.Y - cutin[0] - pos[0]),
                             images[0].Bounds, Color.White * (pos[0] * 0.05f + 1.0f), 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.06f);
+                        //Causes the player to move up when they first enter the conversation
                         cutin[0] += 10;
                         cutin[0] = (int)MathHelper.Clamp(cutin[0], 0, images[0].Height);
                     }
+                    //Draw the right side character image
                     if (images[1] != null)
                     {
                         spriteBatch.Draw(images[1], new Vector2(gameDim.X - images[1].Width + pos[1], gameDim.Y - cutin[1] + pos[1]),
                             images[1].Bounds, Color.White * (pos[1] * -0.05f + 1.0f), 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.06f);
+                        //Causes the player to move up when they first enter the conversation
                         cutin[1] += 10;
                         cutin[1] = (int)MathHelper.Clamp(cutin[1], 0, images[1].Height);
                     }
+                    //Draws the text box
                     spriteBatch.Draw(textures["textbox"], new Vector2(10, 400), textures["textbox"].Bounds,
                         Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.05f);
+                    //Draws the text
                     spriteBatch.DrawString(fontconv, conv[line], new Vector2(10, 400), convColors[talk]);
                     return true;
                 }
