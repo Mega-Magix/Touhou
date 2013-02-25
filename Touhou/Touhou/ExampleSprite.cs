@@ -13,7 +13,7 @@ namespace Touhou.ExampleSprite
 {
     public class ExampleSprite : Microsoft.Xna.Framework.Game
     {
-        GraphicsDeviceManager graphics;
+        static GraphicsDeviceManager graphics;
         static SpriteBatch spriteBatch;
 
         public ExampleSprite()
@@ -45,11 +45,16 @@ namespace Touhou.ExampleSprite
                             };
         string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage",
                               "powersound"};
+        string[] musicFiles = {"A Soul As Red As Ground Cherry",
+                                  "Song of the Night Sparrow",
+                                  "Fall of Fall",
+                                  "Battle"};
         string[] convFiles = { "conv1" };
 
 
         static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
         static Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
+        static Dictionary<string, Song> songs = new Dictionary<string,Song>();
         static Dictionary<string, string[]> conversations = new Dictionary<string, string[]>();
         static Dictionary<string, Color> convColors = new Dictionary<string,Color>();
         
@@ -90,6 +95,9 @@ namespace Touhou.ExampleSprite
             //Load all sounds
             for (int i = 0; i < soundFiles.Length; i++)
                 sounds.Add(soundFiles[i], Content.Load<SoundEffect>(soundFiles[i]));
+            //Load all music
+            for (int i = 0; i < musicFiles.Length; i++)
+                songs.Add(musicFiles[i], Content.Load<Song>(musicFiles[i]));
             //Load all conversations
             for (int i = 0; i < convFiles.Length; i++)
                 conversations.Add(convFiles[i], System.IO.File.ReadAllLines("Content/conv1.txt"));
@@ -115,13 +123,12 @@ namespace Touhou.ExampleSprite
             playerTexture = reimuTextures[0];
             //Create enemy shot sound manager
             enemyShootManager = new SoundManager(sounds["enemyshoot"]);
-            //Load BGM and play it
-            bgm = Content.Load<Song>("Fall of Fall");
-            MediaPlayer.IsRepeating = true; MediaPlayer.Play(bgm);
             //Set screen boundaries
             screenDim = new Vector2(GraphicsDevice.DisplayMode.Width, GraphicsDevice.DisplayMode.Height);
             foregroundDim = screenDim - gameDim;
             playerPosition = gameDim / 2;
+            //Play BGM
+            MediaPlayer.Play(songs["Fall of Fall"]);
         }
 
         protected override void UnloadContent()
@@ -171,7 +178,7 @@ namespace Touhou.ExampleSprite
             this.readInput();
             //Spawn 10 waves of enemies
             if (waves < 10) this.spawnEnemies();
-            else if (conversation == null) conversation = new Conversation(conversations["conv1"]);
+            else if (waves == 10) { waves = 11; conversation = new Conversation(conversations["conv1"]); }
             //Move and draw sprites
             this.Draw(gameTime);
 
@@ -349,12 +356,9 @@ namespace Touhou.ExampleSprite
             }
             if (waveTime <= 0)
             {
-                waveTime = 15.0; spawnDelay1 = 0.0; spawnDelay2 = 10.0; spawnRate1 *= 0.8; waves++;
+                waveTime = 15.0; spawnDelay1 = 0.0;  spawnDelay2 = 10.0; spawnRate1 *= 0.8; waves++;
             }
         }
-
-        
-
         
         protected override void Draw(GameTime gameTime)
         {
@@ -881,6 +885,8 @@ namespace Touhou.ExampleSprite
                 else if (conv[line].StartsWith("*"))
                 {
                     //Right now I don't have commands made, so I'm just printing what would happen
+                    string[] command = conv[line].Substring(1).Split(':');
+                    if (command[0] == "Music") MediaPlayer.Play(songs[command[1]]);
                     Console.WriteLine(conv[line].Substring(1)); line++; this.showConv(); return true;
                 }
                 else
