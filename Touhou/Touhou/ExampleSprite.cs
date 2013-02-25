@@ -39,10 +39,11 @@ namespace Touhou.ExampleSprite
                             "enemy2fly","enemy2moveright","enemy2right",
                             "itempower","itempoint",
                             "bullet1","bullet2","testbullet","testbullet2",
-                            "explode","explodeblue","focus",
+                            "explode","explodeblue","focus","powerup",
                             "foreground","sky"
                             };
-        string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage" };
+        string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage",
+                              "powersound"};
 
         static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
         static Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
@@ -52,6 +53,7 @@ namespace Touhou.ExampleSprite
         static List<Explosion> explosions = new List<Explosion>();
         static List<Item> items = new List<Item>();
         static List<ScoreText> scoreTexts = new List<ScoreText>();
+        static PowerText powerText;
         static AnimatedTexture playerTexture;
         static SoundManager enemyShootManager;
         static Song bgm;
@@ -128,7 +130,7 @@ namespace Touhou.ExampleSprite
         static float firedelay1 = 0.0f;
         static float firedelay2 = 0.0f;
         static int fireamount1 = 1;
-        static int fireamount2 = 1;
+        static int fireamount2 = 0;
         static bool focused = false;
         static float fAngle = 0.0f;
 
@@ -176,19 +178,56 @@ namespace Touhou.ExampleSprite
             else focused = false;
             if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && playerStatus != PlayerStatus.Dead)
             {
-                //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
-                pBullets.Add(new Bullet(textures["bullet1"],playerPosition,
-                    0.0f, 750.0f, Color.White, bulletType.Directional));
+                //Shoot regular bullets at fixed rate based on power when Z is pressed
+                switch (fireamount1)
+                {
+                    case 1:
+                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
+                        0.0f, 750.0f, Color.White, bulletType.Directional));
+                        break;
+                    case 2:
+                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X - 5, playerPosition.Y),
+                        0.0f, 750.0f, Color.White, bulletType.Directional));
+                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X + 5, playerPosition.Y),
+                        0.0f, 750.0f, Color.White, bulletType.Directional));
+                        break;
+                    case 3:
+                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
+                        -10.0f, 750.0f, Color.White, bulletType.Directional));
+                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
+                        0.0f, 750.0f, Color.White, bulletType.Directional));
+                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
+                        10.0f, 750.0f, Color.White, bulletType.Directional));
+                        break;
+                }
+
                 sounds["playershoot"].Play();
                 firedelay1 += firerate1;
             }
             if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && playerStatus != PlayerStatus.Dead)
             {
-                //Shoot bullets at fixed rate when Z is pressed (and only when the player is not dead)
-                pBullets.Add(new Bullet(textures["bullet2"], playerPosition,
-                    30.0f, 500.0f, Color.White, bulletType.Homing));
-                pBullets.Add(new Bullet(textures["bullet2"], playerPosition,
-                    -30.0f, 500.0f, Color.White, bulletType.Homing));
+                //Shoot homing bullets at fixed rate based on power when Z is pressed
+                if (fireamount2 >= 1)
+                {
+                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
+                        -30.0f, 750.0f, Color.White, bulletType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
+                        30.0f, 750.0f, Color.White, bulletType.Homing));
+                }
+                if (fireamount2 >= 2)
+                {
+                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
+                        -50.0f, 750.0f, Color.White, bulletType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
+                        50.0f, 750.0f, Color.White, bulletType.Homing));
+                }
+                if (fireamount2 >= 3)
+                {
+                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
+                        -70.0f, 750.0f, Color.White, bulletType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
+                        70.0f, 750.0f, Color.White, bulletType.Homing));
+                }
                 firedelay2 += firerate2;
             }
         }
@@ -265,26 +304,33 @@ namespace Touhou.ExampleSprite
         }
 
         double spawnDelay1 = 0.0;
-        double spawnDelay2 = 15.0;
+        double spawnRate1 = 1.0;
+        double spawnDelay2 = 10.0;
+        double waveTime = 15.0;
         public void spawnEnemies()
         {
             spawnDelay1 -= dt;
             spawnDelay2 -= dt;
-            if (spawnDelay1 <= 0)
+            waveTime -= dt;
+            if (spawnDelay1 <= 0 && waveTime >= 5)
             {
-                spawnDelay1 += 0.5; enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[3]),
-                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue, 3, 1
-                   ));
+                spawnDelay1 += spawnRate1;
+                enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[3]),
+                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue, 3, 1));
             }
             if (spawnDelay2 <= 0)
             {
-                spawnDelay2 += 15.0;
+                spawnDelay2 += 10.0;
                 int n = random.Next(50, 150);
                 for (int i = 0; i < 3; i++)
                 {
                     enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
                        new Vector2(n+100*i, -30), 180.0f, 50.0f, Color.Blue, 6, 2));
                 }
+            }
+            if (waveTime <= 0)
+            {
+                waveTime = 15.0; spawnDelay1 = 0.0; spawnDelay2 = 10.0; spawnRate1 *= 0.8;
             }
         }
 
@@ -360,6 +406,12 @@ namespace Touhou.ExampleSprite
                 if (!t.update())
                 { scoreTexts.RemoveAt(i); i--; continue; }
             }
+            if (powerText != null)
+            {
+                spriteBatch.Draw(powerText.text, powerText.pos, powerText.text.Bounds, Color.White, 0.0f,
+                       Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
+                if (!powerText.update()) powerText = null;
+            }
             //Update and draw explosions
             for (int i = 0; i < explosions.Count; i++)
             {
@@ -426,6 +478,32 @@ namespace Touhou.ExampleSprite
                     {
                         scoreTexts.Add(new ScoreText(10, pos, Color.White));
                         power++;
+                        if (power >= 8 && fireamount2 <= 0)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount2 = 1; sounds["powersound"].Play();
+                        }
+                        if (power >= 16 && fireamount1 <= 1)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount1 = 2; sounds["powersound"].Play();
+                        }
+                        if (power >= 32 && fireamount2 <= 1)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount2 = 2; sounds["powersound"].Play();
+                        }
+                        if (power >= 64 && fireamount1 <= 2)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount1 = 3; sounds["powersound"].Play();
+                        }
+                        if (power >= 128 && fireamount2 <= 2)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount2 = 3; sounds["powersound"].Play();
+                        }
+
                     }
                     else
                     {
@@ -544,7 +622,7 @@ namespace Touhou.ExampleSprite
                         {
                             playerStatus = PlayerStatus.Dead;
                             sounds["death"].Play();
-                            power = 0;
+                            //power = 0;
                             explosions.Add(new Explosion(textures["explode"], playerPosition,
                                 3.0f, Color.White));
                         }
@@ -642,7 +720,7 @@ namespace Touhou.ExampleSprite
                     {
                         playerStatus = PlayerStatus.Dead;
                         sounds["death"].Play();
-                        power = 0;
+                        //power = 0;
                         explosions.Add(new Explosion(textures["explode"], playerPosition,
                             3.0f, Color.White));
                     }
@@ -687,8 +765,25 @@ namespace Touhou.ExampleSprite
             public ScoreText(int s, Vector2 p, Color c)
             {
                 amount = s; pos = p; color = c;
-                score += amount;
-
+                score += (int)amount;
+            }
+            public bool update()
+            {
+                pos.Y -= (float)dt * 10;
+                time -= (float)dt;
+                if (time < 0) return false;
+                return true;
+            }
+        }
+        public class PowerText
+        {
+            public Texture2D text;
+            public Vector2 pos;
+            public Color color;
+            public float time = 1.5f;
+            public PowerText(Texture2D t, Vector2 p, Color c)
+            {
+                text = t; pos = p; color = c;
             }
             public bool update()
             {
