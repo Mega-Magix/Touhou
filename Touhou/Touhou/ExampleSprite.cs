@@ -14,7 +14,7 @@ namespace Touhou.ExampleSprite
     public class ExampleSprite : Microsoft.Xna.Framework.Game
     {
         GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+        static SpriteBatch spriteBatch;
 
         public ExampleSprite()
         {
@@ -40,13 +40,19 @@ namespace Touhou.ExampleSprite
                             "itempower","itempoint",
                             "bullet1","bullet2","testbullet","testbullet2",
                             "explode","explodeblue","focus","powerup",
-                            "foreground","sky"
+                            "foreground","sky",
+                            "textbox","reimu1","reimu2","marisa1","marisa2"
                             };
         string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage",
                               "powersound"};
+        string[] convFiles = { "conv1" };
+
 
         static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
         static Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
+        static Dictionary<string, string[]> conversations = new Dictionary<string, string[]>();
+        static Dictionary<string, Color> convColors = new Dictionary<string,Color>();
+        
 
         static List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
         static List<AnimatedTexture> enemyTextures = new List<AnimatedTexture>();
@@ -66,6 +72,9 @@ namespace Touhou.ExampleSprite
 
         static SpriteFont font;
         static SpriteFont fontfps;
+        static SpriteFont fontconv;
+
+        static Conversation conversation;
 
         static int fps = 0;
 
@@ -81,9 +90,15 @@ namespace Touhou.ExampleSprite
             //Load all sounds
             for (int i = 0; i < soundFiles.Length; i++)
                 sounds.Add(soundFiles[i], Content.Load<SoundEffect>(soundFiles[i]));
-            //Load font
+            //Load all conversations
+            for (int i = 0; i < convFiles.Length; i++)
+                conversations.Add(convFiles[i], System.IO.File.ReadAllLines("Content/conv1.txt"));
+            //Load conversation colors
+            convColors.Add("reimu", Color.Crimson); convColors.Add("marisa", Color.Gold);
+            //Load fonts
             font = Content.Load<SpriteFont>("SpriteFont1");
             fontfps = Content.Load<SpriteFont>("SpriteFont2");
+            fontconv = Content.Load<SpriteFont>("SpriteFont3");
             //Create Reimu animations
             reimuTextures.Add(new AnimatedTexture(textures["reimufly"], 4, 0.2));
             reimuTextures.Add(new AnimatedTexture(textures["reimumoveleft"], 3, 0.1));
@@ -115,7 +130,7 @@ namespace Touhou.ExampleSprite
         }
 
         //State of keyboard
-        KeyboardState keystate;
+        static KeyboardState keystate;
         //Player and bullet data
         static Vector2 spriteSpeed = Vector2.Zero;
         static Vector2 playerPosition;
@@ -133,6 +148,7 @@ namespace Touhou.ExampleSprite
         static int fireamount2 = 0;
         static bool focused = false;
         static float fAngle = 0.0f;
+        
 
         static double dt;
         static SpriteEffects playerEffect = SpriteEffects.None;
@@ -153,8 +169,9 @@ namespace Touhou.ExampleSprite
 
             //Read keyboard input
             this.readInput();
-            //Spawn enemies randomly
-            this.spawnEnemies();
+            //Spawn 10 waves of enemies
+            if (waves < 10) this.spawnEnemies();
+            else if (conversation == null) conversation = new Conversation(conversations["conv1"]);
             //Move and draw sprites
             this.Draw(gameTime);
 
@@ -176,7 +193,7 @@ namespace Touhou.ExampleSprite
             if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += playerSpeed;
             if (keystate.IsKeyDown(Keys.LeftShift)) { focused = true; spriteSpeed /= 2; }
             else focused = false;
-            if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && playerStatus != PlayerStatus.Dead)
+            if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && playerStatus != PlayerStatus.Dead && conversation == null)
             {
                 //Shoot regular bullets at fixed rate based on power when Z is pressed
                 switch (fireamount1)
@@ -204,7 +221,7 @@ namespace Touhou.ExampleSprite
                 sounds["playershoot"].Play();
                 firedelay1 += firerate1;
             }
-            if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && playerStatus != PlayerStatus.Dead)
+            if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && playerStatus != PlayerStatus.Dead && conversation == null)
             {
                 //Shoot homing bullets at fixed rate based on power when Z is pressed
                 if (fireamount2 >= 1)
@@ -307,6 +324,8 @@ namespace Touhou.ExampleSprite
         double spawnRate1 = 1.0;
         double spawnDelay2 = 10.0;
         double waveTime = 15.0;
+        int waves = 0;
+
         public void spawnEnemies()
         {
             spawnDelay1 -= dt;
@@ -330,10 +349,13 @@ namespace Touhou.ExampleSprite
             }
             if (waveTime <= 0)
             {
-                waveTime = 15.0; spawnDelay1 = 0.0; spawnDelay2 = 10.0; spawnRate1 *= 0.8;
+                waveTime = 15.0; spawnDelay1 = 0.0; spawnDelay2 = 10.0; spawnRate1 *= 0.8; waves++;
             }
         }
 
+        
+
+        
         protected override void Draw(GameTime gameTime)
         {
             //Window data
@@ -424,6 +446,9 @@ namespace Touhou.ExampleSprite
                     0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.05f);
             }
 
+            //Draw conversation
+            if (conversation != null) if (!conversation.show()) conversation = null;
+
             //Draw foreground
             drawForeground();
 
@@ -438,9 +463,6 @@ namespace Touhou.ExampleSprite
             spriteBatch.End();
             base.Draw(gameTime);
         }
-
-
-
 
 
 
@@ -792,6 +814,91 @@ namespace Touhou.ExampleSprite
                 if (time < 0) return false;
                 return true;
             }
+        }
+
+        public class Conversation
+        {
+            public string[] conv;
+            public int line = 0;
+            bool next = false;
+            public string talk;
+            public Texture2D[] images = { null, null };
+            public string[] characters = { null, null };
+            int move = 0; int[] pos = { 0, 0 };
+            int[] cutin = { 0, 0 };
+            char[] delimiters = { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            Vector2 textboxScale = new Vector2(1.0f, 0.0f);
+            public Conversation(string[] c)
+            {
+                conv = c;
+                if (keystate.IsKeyDown(Keys.Z)) next = true;
+            }
+            public bool show()
+            {
+                if (textboxScale.Y < 1.0f) textboxScale.Y += 0.02f;
+                else
+                {
+                    textboxScale.Y = 1.0f; return this.showConv();
+                }
+                spriteBatch.Draw(textures["textbox"], new Vector2(10, 400), textures["textbox"].Bounds,
+                        Color.White, 0.0f, Vector2.Zero,textboxScale, SpriteEffects.None, 0.05f);
+                return true;
+            }
+            private bool showConv()
+            {
+                if (keystate.IsKeyDown(Keys.Z))
+                {
+                    if (!next) line++;
+                    next = true;
+                }
+                else next = false;
+                if (line >= conv.Length) return false;
+                if (conv[line].StartsWith("-"))
+                {
+                    talk = conv[line].Split(delimiters)[1];
+                    if (characters[0] == null) characters[0] = talk;
+                    else if (characters[1] == null) characters[1] = talk;
+                    if (characters[0] == conv[line].Split(delimiters)[1])
+                        images[0] = textures[conv[line].Substring(1)];
+                    else if (characters[1] == conv[line].Split(delimiters)[1])
+                        images[1] = textures[conv[line].Substring(1)];
+                    line++; this.showConv(); return true;
+                }
+                else if (conv[line].StartsWith("*"))
+                {
+                    Console.WriteLine(conv[line].Substring(1)); line++; this.showConv(); return true;
+                }
+                else
+                {
+                    if (talk == characters[0]) move = 1;
+                    else move = -1;
+                    pos[0] += move;
+                    pos[1] += move;
+                    pos[0] = (int)MathHelper.Clamp(pos[0], -10, 0);
+                    pos[1] = (int)MathHelper.Clamp(pos[1], 0, 10);
+                    if (images[0] != null)
+                    {
+                        spriteBatch.Draw(images[0], new Vector2(pos[0], gameDim.Y - cutin[0] - pos[0]),
+                            images[0].Bounds, Color.White * (pos[0] * 0.05f + 1.0f), 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.06f);
+                        cutin[0] += 10;
+                        cutin[0] = (int)MathHelper.Clamp(cutin[0], 0, images[0].Height);
+                    }
+                    if (images[1] != null)
+                    {
+                        spriteBatch.Draw(images[1], new Vector2(gameDim.X - images[1].Width + pos[1], gameDim.Y - cutin[1] + pos[1]),
+                            images[1].Bounds, Color.White * (pos[1] * -0.05f + 1.0f), 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.06f);
+                        cutin[1] += 10;
+                        cutin[1] = (int)MathHelper.Clamp(cutin[1], 0, images[1].Height);
+                    }
+                    spriteBatch.Draw(textures["textbox"], new Vector2(10, 400), textures["textbox"].Bounds,
+                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.05f);
+                    spriteBatch.DrawString(fontconv, conv[line], new Vector2(10, 400), convColors[talk]);
+                    return true;
+                }
+
+            }
+
+
         }
 
         public class AnimatedTexture

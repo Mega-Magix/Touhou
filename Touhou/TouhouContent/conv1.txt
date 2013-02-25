@@ -1,0 +1,27 @@
+-reimu1
+Ah, it sure is nice out today.
+I wonder how the others are doing?
+*Enter:Marisa
+-marisa2
+Aha! There you are!
+-reimu1
+Hello, Marisa. How is everything going?
+-marisa1
+Pretty well. I still have to find some of the others. There are a lot of people in Gensokyo.
+-reimu1
+Yeah, you're right. Hey, does something about this place feel different to you?
+-marisa1
+Yeah. But don't worry, that's normal. The new Gensokyo is still in progress.
+-marisa2
+If I could find Suika, I would kick her butt to get this place finished sooner.
+-reimu2
+Hey, I want to do that!
+*Music:Battle
+-marisa2
+Oh yeah? Then show me that you're strong enough.
+-reimu2
+Is that a challenge?
+-marisa2
+Of course it is!
+-reimu2
+Alright! Then let's go!
