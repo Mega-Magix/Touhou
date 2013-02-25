@@ -524,7 +524,7 @@ namespace Touhou.ExampleSprite
                 {
                     //Check for bullet collisions with player
                     if (Math.Sqrt((playerPosition.X - pos.X) * (playerPosition.X - pos.X) +
-                        (playerPosition.Y - pos.Y) * (playerPosition.Y - pos.Y)) < 10.0 &&
+                        (playerPosition.Y - pos.Y) * (playerPosition.Y - pos.Y)) < 5.0 &&
                         playerStatus != PlayerStatus.Dead)
                     {
                         //If the player is alive, kill the player and create large explosion
