@@ -67,7 +67,6 @@ namespace Touhou.ExampleSprite
         static PowerText powerText;
         static AnimatedTexture playerTexture;
         static SoundManager enemyShootManager;
-        static Song bgm;
 
         static Random random = new Random();
 
@@ -128,6 +127,7 @@ namespace Touhou.ExampleSprite
             foregroundDim = screenDim - gameDim;
             playerPosition = gameDim / 2;
             //Play BGM
+            MediaPlayer.IsRepeating = true;
             MediaPlayer.Play(songs["Fall of Fall"]);
         }
 
@@ -223,6 +223,16 @@ namespace Touhou.ExampleSprite
                         pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
                         10.0f, 750.0f, Color.White, bulletType.Directional));
                         break;
+                    case 4:
+                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X - 5, playerPosition.Y),
+                        0.0f, 750.0f, Color.White, bulletType.Directional));
+                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X + 5, playerPosition.Y),
+                        0.0f, 750.0f, Color.White, bulletType.Directional));
+                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
+                        -10.0f, 750.0f, Color.White, bulletType.Directional));
+                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
+                        10.0f, 750.0f, Color.White, bulletType.Directional));
+                        break;
                 }
 
                 sounds["playershoot"].Play();
@@ -251,6 +261,13 @@ namespace Touhou.ExampleSprite
                         -70.0f, 750.0f, Color.White, bulletType.Homing));
                         pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
                         70.0f, 750.0f, Color.White, bulletType.Homing));
+                }
+                if (fireamount2 >= 4)
+                {
+                    pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
+                    -90.0f, 750.0f, Color.White, bulletType.Homing));
+                    pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
+                    90.0f, 750.0f, Color.White, bulletType.Homing));
                 }
                 firedelay2 += firerate2;
             }
@@ -519,16 +536,27 @@ namespace Touhou.ExampleSprite
                             powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
                             fireamount2 = 2; sounds["powersound"].Play();
                         }
-                        if (power >= 64 && fireamount1 <= 2)
+                        if (power >= 48 && fireamount1 <= 2)
                         {
                             powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
                             fireamount1 = 3; sounds["powersound"].Play();
                         }
-                        if (power >= 128 && fireamount2 <= 2)
+                        if (power >= 64 && fireamount2 <= 2)
                         {
                             powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
                             fireamount2 = 3; sounds["powersound"].Play();
                         }
+                        if (power >= 96 && fireamount1 <= 3)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount1 = 4; sounds["powersound"].Play();
+                        }
+                        if (power >= 128 && fireamount2 <= 3)
+                        {
+                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
+                            fireamount2 = 4; sounds["powersound"].Play();
+                        }
+                        if (power > 128) power = 128;
 
                     }
                     else
