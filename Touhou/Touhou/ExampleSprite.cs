@@ -131,8 +131,6 @@ namespace Touhou.ExampleSprite
             bossScript1Loops[0] = new Loop(1000, 0.2, 0, 0.0);
             bossScript1Loops[1] = new Loop(20, 0.0, 1, 0.0);
             bossScript1 = new Script(textures["testbullet2"], 0.0f, 100.0f, bossScript1Loops);
-            boss = new Boss(bossTexture, new Vector2(-30, 100), 0.0f, 0.0f, Color.White, 1500, bossScript1);
-            enemies.Add(boss);
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
             //Create enemy shot sound manager
@@ -193,8 +191,16 @@ namespace Touhou.ExampleSprite
             this.readInput();
             //Spawn 10 waves of enemies
             if (waves < 10) this.spawnEnemies();
-            else if (waves == 10) { waves = 11; conversation = new Conversation(conversations["conv1"]); }
-            if (waves == 11 && conversation == null && boss != null) boss.script.run();
+            else if (waves == 10)
+            {
+                waves = 11; conversation = new Conversation(conversations["conv1"]);
+                boss = new Boss(bossTexture, new Vector2(-30, 100), 0.0f, 0.0f, Color.White, 1500, bossScript1);
+                enemies.Add(boss);
+            }
+            if (waves == 11 && conversation == null && boss != null)
+            {
+                boss.script.run();
+            }
             //Move and draw sprites
             this.Draw(gameTime);
             //Move and draw boss
