@@ -33,6 +33,13 @@ namespace Touhou.ExampleSprite
         static List<Bullet> eBullets = new List<Bullet>();
         static List<Enemy> enemies = new List<Enemy>();
 
+
+        //Boss data
+        static Boss boss;
+        static Loop[] bossScript1Loops = new Loop[2];
+        static Script bossScript1;
+        
+
         //Arrays and lists for storing texture and sound data
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
@@ -41,10 +48,10 @@ namespace Touhou.ExampleSprite
                             "bullet1","bullet2","testbullet","testbullet2",
                             "explode","explodeblue","focus","powerup",
                             "foreground","sky",
-                            "textbox","reimu1","reimu2","marisa1","marisa2"
+                            "textbox","reimu1","reimu2","marisa1","marisa2","marisafly"
                             };
         string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage",
-                              "powersound"};
+                              "powersound", "defeat"};
         string[] musicFiles = {"A Soul As Red As Ground Cherry",
                                   "Song of the Night Sparrow",
                                   "Fall of Fall",
@@ -66,6 +73,7 @@ namespace Touhou.ExampleSprite
         static List<ScoreText> scoreTexts = new List<ScoreText>();
         static PowerText powerText;
         static AnimatedTexture playerTexture;
+        static AnimatedTexture bossTexture;
         static SoundManager enemyShootManager;
 
         static Random random = new Random();
@@ -118,6 +126,13 @@ namespace Touhou.ExampleSprite
             enemyTextures.Add(new AnimatedTexture(textures["enemy2fly"], 4, 0.2));
             enemyTextures.Add(new AnimatedTexture(textures["enemy2moveright"], 3, 0.1));
             enemyTextures.Add(new AnimatedTexture(textures["enemy2right"], 1, 1));
+            //Load boss data
+            bossTexture = new AnimatedTexture(textures["marisafly"], 4, 0.3);
+            bossScript1Loops[0] = new Loop(1000, 0.2, 0, 0.0);
+            bossScript1Loops[1] = new Loop(20, 0.0, 1, 0.0);
+            bossScript1 = new Script(textures["testbullet2"], 0.0f, 100.0f, bossScript1Loops);
+            boss = new Boss(bossTexture, new Vector2(-30, 100), 0.0f, 0.0f, Color.White, 1500, bossScript1);
+            enemies.Add(boss);
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
             //Create enemy shot sound manager
@@ -141,8 +156,8 @@ namespace Touhou.ExampleSprite
         //Player and bullet data
         static Vector2 spriteSpeed = Vector2.Zero;
         static Vector2 playerPosition;
-        public enum PlayerStatus { Alive, Spawning, Dead };
-        public enum item { Point, Power };
+        public enum PlayerStatus { Alive, Spawning, Dead }
+        public enum item { Point, Power }
         public enum bulletType { Normal, Directional, Animated, Homing, Spinning, Laser }
         static PlayerStatus playerStatus = PlayerStatus.Alive;
         static float respawnDelay = 3.0f;
@@ -179,8 +194,12 @@ namespace Touhou.ExampleSprite
             //Spawn 10 waves of enemies
             if (waves < 10) this.spawnEnemies();
             else if (waves == 10) { waves = 11; conversation = new Conversation(conversations["conv1"]); }
+            if (waves == 11 && conversation == null && boss != null) boss.script.run();
             //Move and draw sprites
             this.Draw(gameTime);
+            //Move and draw boss
+            if (boss != null && Boss.isEntering) boss.enter();
+            if (boss != null) boss.update();
 
 
             base.Update(gameTime);
@@ -416,6 +435,10 @@ namespace Touhou.ExampleSprite
                 if (!e.update())
                 { enemies.RemoveAt(i); i--; continue; }
             }
+            //Draw boss
+            if (boss != null)
+            spriteBatch.Draw(boss.img.img, boss.pos - boss.dim / 2, boss.img.getFrame(),
+            Color.White, 0.0f, Vector2.Zero, 1.0f, boss.effect, 0.3f);
             //Move and draw enemy bullets
             for (int i = 0; i < eBullets.Count; i++)
             {
@@ -697,20 +720,39 @@ namespace Touhou.ExampleSprite
                             sounds["damage"].Play();
                             if (enemies[i].health <= 0)
                             {
-                                //Destroy enemy and create explosion and item
-                                explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
-                                    1.0f, enemies[i].color));
-                                score += 1000;
-                                if (random.Next(2) == 0)
-                                    items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
+                                if (enemies[i] == boss)
+                                {
+                                    //Destroy boss and create lots of items and huge explosion
+                                    explosions.Add(new Explosion(textures["explode"], enemies[i].pos,
+                                        5.0f, enemies[i].color));
+                                    score += 1000000;
+                                    sounds["defeat"].Play();
+                                    for (int j = 0; j < 50; j++)
+                                    {
+                                        items.Add(new Item(item.Point, textures["itempoint"],
+                                            boss.pos + new Vector2(random.Next(-50, 50),random.Next(-50,50))));
+                                    }
+                                    boss = null;
+                                    enemies.RemoveAt(i); i--;
+                                }
                                 else
-                                    items.Add(new Item(item.Power, textures["itempower"], enemies[i].pos));
-                                sounds["explodesound"].Play();
-                                enemies.RemoveAt(i); i--;
+                                {
+                                    //Destroy enemy and create explosion and item
+                                    explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
+                                        1.0f, enemies[i].color));
+                                    score += 1000;
+                                    if (random.Next(2) == 0)
+                                        items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
+                                    else
+                                        items.Add(new Item(item.Power, textures["itempower"], enemies[i].pos));
+                                    sounds["explodesound"].Play();
+                                    enemies.RemoveAt(i); i--;
+                                }
                             }
                             return false;
                         }
                     }
+                    
                 }
                 return true;
             }
@@ -753,7 +795,7 @@ namespace Touhou.ExampleSprite
                 pos += dir * speed * (float)dt;
                 //Have the enemy shoot
                 sDelay -= (float)dt;
-                if (sDelay <= 0)
+                if (sDelay <= 0 && script > 0)
                 {
                     eBullets.AddRange(this.shoot()); enemyShootManager.play(); sDelay += sRate;
                 }
@@ -791,6 +833,56 @@ namespace Touhou.ExampleSprite
                     case 2: return shoot2(pos);
                 }
                 return null;
+            }
+        }
+        public class Boss : Enemy
+        {
+            new public Script script;
+            public static bool isEntering = false;
+            //Constructor given angular direction
+            public Boss(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr)
+                : base(t, p, a, s, c, h, 0)
+            {
+                img = t; pos = p; angle = a - 90.0f; speed = s; health = h; script = scr;
+                radians = MathHelper.ToRadians(angle);
+                dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+                dim = img.dim; color = c;
+            }
+            //Constructor given vector direction
+            public Boss(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr)
+                : base(t, p, d, c, h, 0)
+            {
+                img = t; pos = p; dir = d; health = h; script = scr;
+                angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
+                speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
+            }
+            public bool update()
+            {
+                //Check for enemy collisions with player (but only if the player is alive)
+                if (Math.Abs(pos.X - playerPosition.X) < dim.X - 10 &&
+                    Math.Abs(pos.Y - playerPosition.Y) < dim.Y - 10 &&
+                    playerStatus == PlayerStatus.Alive)
+                    //Kill the player and create large explosion
+                    if (playerStatus == PlayerStatus.Alive)
+                    {
+                        playerStatus = PlayerStatus.Dead;
+                        sounds["death"].Play();
+                        //power = 0;
+                        explosions.Add(new Explosion(textures["explode"], playerPosition,
+                            3.0f, Color.White));
+                    }
+                return true;
+                }
+            
+            
+            //Method to make the boss enter the screen
+            public void enter()
+            {
+                pos.X += (gameDim.X / 2- pos.X) / gameDim.X * 10 + 0.5f;
+                if (pos.X >= gameDim.X / 2)
+                {
+                    isEntering = false; pos.X = gameDim.X / 2;
+                }
             }
         }
 
@@ -864,7 +956,7 @@ namespace Touhou.ExampleSprite
             public Conversation(string[] c)
             {
                 conv = c;
-                if (keystate.IsKeyDown(Keys.Z)) next = true;
+                if (keystate.IsKeyDown(Keys.Z)) next = true; //GLITCH, FIX LATER
             }
             //Draws the conversation
             public bool show()
@@ -912,9 +1004,9 @@ namespace Touhou.ExampleSprite
                 //Lines starting with "*" denote a special command
                 else if (conv[line].StartsWith("*"))
                 {
-                    //Right now I don't have commands made, so I'm just printing what would happen
                     string[] command = conv[line].Substring(1).Split(':');
                     if (command[0] == "Music") MediaPlayer.Play(songs[command[1]]);
+                    if (command[0] == "Enter") Boss.isEntering = true;
                     Console.WriteLine(conv[line].Substring(1)); line++; this.showConv(); return true;
                 }
                 else
@@ -957,6 +1049,85 @@ namespace Touhou.ExampleSprite
 
 
         }
+
+        public class Script
+        {
+            public Texture2D img = textures["testbullet"];
+            public float angle;
+            public float speed;
+            public double time = 0.0;
+            public Loop[] loopData;
+            public List<Loop> loops = new List<Loop>();
+            public Script(Texture2D i, float a, float s, Loop[] l)
+            {
+                img = i; speed = s; angle = a;
+                loopData = l; loops.Add(new Loop(loopData[0].totalLoops, loopData[0].loopDelay,
+                                  loopData[0].loopScript, 0.0));
+            }
+            public void run()
+            {
+                for (int i = 0; i < loops.Count; i++)
+                {
+                    int loopLevel = loops[i].loopScript;
+                    if (time >= loops[i].nextLoopTime)
+                    {
+                        if (loops[i].run(this))
+                        {
+                            loops[i].nextLoopTime = loops[i].loopDelay + time;
+                            if (loopLevel >= loopData.Length - 1)
+                            {
+                                eBullets.Add(new Bullet(img,
+                                boss.pos, angle, speed, Color.White, bulletType.Directional));
+                                enemyShootManager.play();
+                            }
+                            else
+                            {
+                                loops.Add(new Loop(loopData[loopLevel + 1].totalLoops,
+                                    loopData[loopLevel + 1].loopDelay,
+                                   loopData[loopLevel + 1].loopScript, time));
+                            }
+                            i--;
+                            
+                        }
+                        else loops.RemoveAt(i);
+                    }
+                }
+                time += dt;
+            }
+        }
+
+        public class Loop
+        {
+            public int totalLoops;
+            public int loopNum;
+            public double loopDelay;
+            public double nextLoopTime;
+            public int loopScript;
+            public Loop(int tLoops, double lDelay, int lScript, double time)
+            {
+                totalLoops = tLoops; loopDelay = lDelay; loopScript = lScript; loopNum = 0;
+            }
+            public bool run(Script script)
+            {
+                if (loopNum >= totalLoops) return false;
+                if (loopNum > 0) runScript(script);
+                loopNum++;
+                return true;
+                
+            }
+            public void runScript(Script script)
+            {
+                switch (loopScript)
+                {
+                    case 0: break;
+                    case 1:
+                        script.angle = (float)random.NextDouble() * 360.0f;
+                        break;
+                }
+            }
+        }
+
+        
 
         public class AnimatedTexture
         {
