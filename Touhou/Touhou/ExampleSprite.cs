@@ -14,6 +14,7 @@ namespace Touhou.ExampleSprite
     public class ExampleSprite : Microsoft.Xna.Framework.Game
     {
         static GraphicsDeviceManager graphics;
+        static GraphicsDevice graphicsDevice;
         static SpriteBatch spriteBatch;
 
         public ExampleSprite()
@@ -45,11 +46,12 @@ namespace Touhou.ExampleSprite
                             "enemy1fly","enemy1moveright","enemy1right",
                             "enemy2fly","enemy2moveright","enemy2right",
                             "itempower","itempoint",
-                            "bullet1","bullet2","testbullet","testbullet2",
-                            "explode","explodeblue","focus","powerup",
+                            "bullet1","bullet2",
+                            "explode","focus","powerup",
                             "foreground","sky",
                             "textbox","reimu1","reimu2","marisa1","marisa2","marisafly"
                             };
+        string[] bulletTexFiles = { "explode", "B1", "B2" };
         string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage",
                               "powersound", "defeat"};
         string[] musicFiles = {"A Soul As Red As Ground Cherry",
@@ -64,6 +66,7 @@ namespace Touhou.ExampleSprite
         static Dictionary<string, Song> songs = new Dictionary<string,Song>();
         static Dictionary<string, string[]> conversations = new Dictionary<string, string[]>();
         static Dictionary<string, Color> convColors = new Dictionary<string,Color>();
+        static Dictionary<string, Dictionary<Color, Texture2D>> bulletTextures = new Dictionary<string, Dictionary<Color, Texture2D>>();
         
 
         static List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
@@ -96,9 +99,16 @@ namespace Touhou.ExampleSprite
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
+            graphicsDevice = GraphicsDevice;
             //Load all textures
             for (int i = 0; i < texFiles.Length; i++)
                 textures.Add(texFiles[i], Content.Load<Texture2D>(texFiles[i]));
+            //Load bullet textures into dictionary
+            for (int i = 0; i < bulletTexFiles.Length; i++)
+            {
+                bulletTextures.Add(bulletTexFiles[i], new Dictionary<Color, Texture2D>());
+                bulletTextures[bulletTexFiles[i]].Add(Color.White, Content.Load<Texture2D>(bulletTexFiles[i]));
+            }
             //Load all sounds
             for (int i = 0; i < soundFiles.Length; i++)
                 sounds.Add(soundFiles[i], Content.Load<SoundEffect>(soundFiles[i]));
@@ -130,7 +140,7 @@ namespace Touhou.ExampleSprite
             bossTexture = new AnimatedTexture(textures["marisafly"], 4, 0.3);
             bossScript1Loops[0] = new Loop(1000, 0.2, 0, 0.0);
             bossScript1Loops[1] = new Loop(20, 0.0, 1, 0.0);
-            bossScript1 = new Script(textures["testbullet2"], 0.0f, 100.0f, bossScript1Loops);
+            bossScript1 = new Script(getColoredTexture("B2",Color.Purple), 0.0f, 100.0f, bossScript1Loops);
             //Starting Reimu texture
             playerTexture = reimuTextures[0];
             //Create enemy shot sound manager
@@ -384,7 +394,7 @@ namespace Touhou.ExampleSprite
             {
                 spawnDelay1 += spawnRate1;
                 enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[3]),
-                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Blue, 3, 1));
+                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Red, 3, 1));
             }
             if (spawnDelay2 <= 0)
             {
@@ -399,6 +409,35 @@ namespace Touhou.ExampleSprite
             if (waveTime <= 0)
             {
                 waveTime = 15.0; spawnDelay1 = 0.0;  spawnDelay2 = 10.0; spawnRate1 *= 0.8; waves++;
+            }
+        }
+
+        public static Texture2D getColoredTexture(string t, Color c)
+        {
+            if (bulletTextures[t].ContainsKey(c))
+                return bulletTextures[t][c];
+            else
+            {
+                Texture2D def = bulletTextures[t][Color.White];
+                Color[] data = new Color[def.Width * def.Height];
+                def.GetData(data);
+                int[] rgba = new int[4];
+                for (int i = 0; i < data.Length; i++)
+                {
+                    rgba[0] = (data[i].R - 128 + c.R) * 2;
+                    rgba[1] = (data[i].G - 128 + c.G) * 2;
+                    rgba[2] = (data[i].B - 128 + c.B) * 2;
+                    rgba[3] = data[i].A;
+                    rgba[0] = (int)MathHelper.Clamp(rgba[0], 0, 255);
+                    rgba[1] = (int)MathHelper.Clamp(rgba[1], 0, 255);
+                    rgba[2] = (int)MathHelper.Clamp(rgba[2], 0, 255);
+                    rgba[3] = (int)MathHelper.Clamp(rgba[3], 0, 255);
+                    data[i].R = (byte)rgba[0]; data[i].G = (byte)rgba[1]; data[i].B = (byte)rgba[2]; data[i].A = (byte)rgba[3];
+                }
+                Texture2D newTexture = new Texture2D(graphicsDevice, def.Width, def.Height);
+                newTexture.SetData(data);
+                bulletTextures[t].Add(c, newTexture);
+                return bulletTextures[t][c];
             }
         }
         
@@ -445,6 +484,9 @@ namespace Touhou.ExampleSprite
             if (boss != null)
             spriteBatch.Draw(boss.img.img, boss.pos - boss.dim / 2, boss.img.getFrame(),
             Color.White, 0.0f, Vector2.Zero, 1.0f, boss.effect, 0.3f);
+            //Switch blend state for color blending
+            spriteBatch.End();
+            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.NonPremultiplied);
             //Move and draw enemy bullets
             for (int i = 0; i < eBullets.Count; i++)
             {
@@ -459,6 +501,9 @@ namespace Touhou.ExampleSprite
                 if (!b.update("player"))
                 { eBullets.RemoveAt(i); i--; continue; }
             }
+            //Switch back
+            spriteBatch.End();
+            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //Move and draw items
             for (int i = 0; i < items.Count; i++)
             {
@@ -484,6 +529,9 @@ namespace Touhou.ExampleSprite
                        Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
                 if (!powerText.update()) powerText = null;
             }
+            //Switch blend state for color blending
+            spriteBatch.End();
+            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.NonPremultiplied);
             //Update and draw explosions
             for (int i = 0; i < explosions.Count; i++)
             {
@@ -492,9 +540,14 @@ namespace Touhou.ExampleSprite
                 e.alphaAmount -= (float)dt * 2 / e.expansionRate;
                 if (e.alphaAmount <= 0)
                 { explosions.RemoveAt(i); i--; continue; }
-                spriteBatch.Draw(e.img, e.pos - e.dim * e.expandAmount / 2, e.img.Bounds, Color.White * e.alphaAmount,
+                Color[] testData = new Color[e.img.Width * e.img.Height];
+                e.img.GetData(testData);
+                spriteBatch.Draw(e.img, e.pos - e.dim * e.expandAmount / 2, e.img.Bounds, new Color(255, 255, 255, e.alphaAmount),
                     0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.05f);
             }
+            //Switch back
+            spriteBatch.End();
+            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
 
             //Draw conversation
             if (conversation != null) if (!conversation.show()) conversation = null;
@@ -508,6 +561,8 @@ namespace Touhou.ExampleSprite
 
             //Draw framerate
             spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
+
+
 
             //End drawing sprites
             spriteBatch.End();
@@ -706,8 +761,8 @@ namespace Touhou.ExampleSprite
                             playerStatus = PlayerStatus.Dead;
                             sounds["death"].Play();
                             //power = 0;
-                            explosions.Add(new Explosion(textures["explode"], playerPosition,
-                                3.0f, Color.White));
+                            explosions.Add(new Explosion(getColoredTexture("explode",Color.Crimson),
+                                playerPosition,3.0f, Color.White));
                         }
                         //Return false to indicate bullet destruction
                         return false;
@@ -729,8 +784,8 @@ namespace Touhou.ExampleSprite
                                 if (enemies[i] == boss)
                                 {
                                     //Destroy boss and create lots of items and huge explosion
-                                    explosions.Add(new Explosion(textures["explode"], enemies[i].pos,
-                                        5.0f, enemies[i].color));
+                                    explosions.Add(new Explosion(getColoredTexture("explode",Color.Yellow),
+                                        enemies[i].pos,5.0f, enemies[i].color));
                                     score += 1000000;
                                     sounds["defeat"].Play();
                                     for (int j = 0; j < 50; j++)
@@ -744,8 +799,8 @@ namespace Touhou.ExampleSprite
                                 else
                                 {
                                     //Destroy enemy and create explosion and item
-                                    explosions.Add(new Explosion(textures["explodeblue"], enemies[i].pos,
-                                        1.0f, enemies[i].color));
+                                    explosions.Add(new Explosion(getColoredTexture("explode",enemies[i].color),
+                                        enemies[i].pos, 1.0f, enemies[i].color));
                                     score += 1000;
                                     if (random.Next(2) == 0)
                                         items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
@@ -814,7 +869,7 @@ namespace Touhou.ExampleSprite
                     playerStatus != PlayerStatus.Dead)
                 //Destroy enemy upon collision with player and create explosion
                 {
-                    explosions.Add(new Explosion(textures["explodeblue"], pos,
+                    explosions.Add(new Explosion(getColoredTexture("explode",color), pos,
                         1.0f, color));
                     sounds["explodesound"].Play();
                     //If the player is alive, kill the player and create large explosion
@@ -823,8 +878,8 @@ namespace Touhou.ExampleSprite
                         playerStatus = PlayerStatus.Dead;
                         sounds["death"].Play();
                         //power = 0;
-                        explosions.Add(new Explosion(textures["explode"], playerPosition,
-                            3.0f, Color.White));
+                        explosions.Add(new Explosion(getColoredTexture("explode", Color.Crimson),
+                                playerPosition, 3.0f, Color.White));
                     }
                     //Return false to indicate enemy destruction
                     return false;
@@ -1058,7 +1113,7 @@ namespace Touhou.ExampleSprite
 
         public class Script
         {
-            public Texture2D img = textures["testbullet"];
+            public Texture2D img = textures["bullet1"];
             public float angle;
             public float speed;
             public double time = 0.0;
@@ -1180,7 +1235,7 @@ namespace Touhou.ExampleSprite
         public static List<Bullet> shoot1(Vector2 pos)
         {
             List<Bullet> l = new List<Bullet>();
-            l.Add(new Bullet(textures["testbullet"], pos, random.Next(0, 360),
+            l.Add(new Bullet(getColoredTexture("B1", Color.Red), pos, random.Next(0, 360),
                 100, Color.White, bulletType.Normal));
             return l;
         }
@@ -1192,7 +1247,7 @@ namespace Touhou.ExampleSprite
                 pos.Y - playerPosition.Y));
             for (int i = -60; i <= 60; i += 30)
             {
-                l.Add(new Bullet(textures["testbullet2"], pos, a + i,
+                l.Add(new Bullet(getColoredTexture("B2", new Color(50,50,255)), pos, a + i,
                     100, Color.White, bulletType.Directional));
             }
             return l;
