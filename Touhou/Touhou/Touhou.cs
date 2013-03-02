@@ -16,7 +16,7 @@ namespace Touhou
         GraphicsDeviceManager graphics;
         KeyboardState keystate;
 
-        Level level;
+        Battle.Level level;
 
         public Touhou()
         {
@@ -30,7 +30,7 @@ namespace Touhou
 
             base.IsFixedTimeStep = false;
 
-            level = new Level(this);
+            level = new Battle.Level(this);
         }
 
         protected override void Update(GameTime gameTime)

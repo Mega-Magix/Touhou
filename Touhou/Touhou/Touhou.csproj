@@ -146,6 +146,7 @@
   <ItemGroup>
     <Compile Include="ExampleSprite.cs" />
     <Compile Include="Effects.cs" />
+    <Compile Include="Player.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="IronPython.cs" />
     <Compile Include="Program.cs">

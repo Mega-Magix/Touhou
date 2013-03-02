@@ -1,5 +1,5 @@
-Content\reimu.xnb
 Content\bullet1.xnb
+Content\reimu.xnb
 Content\reimufly.xnb
 Content\reimumoveleft.xnb
 Content\reimuleft.xnb
@@ -14,37 +14,37 @@ Content\enemy2fly.xnb
 Content\enemy2moveright.xnb
 Content\enemy2right.xnb
 Content\explode.xnb
-Content\explodesound.xnb
 Content\explodeblue.xnb
+Content\explodesound.xnb
 Content\death.xnb
-Content\Song of the Night Sparrow.xnb
+Content\testbullet.xnb
 Content\foreground.xnb
+Content\Song of the Night Sparrow.xnb
 Content\enemyshoot.xnb
 Content\itempoint.xnb
 Content\itempower.xnb
+Content\bullet2.xnb
+Content\testbullet2.xnb
+Content\sky.xnb
+Content\Fall of Fall.xnb
 Content\item.xnb
+Content\damage.xnb
 Content\SpriteFont1.xnb
 Content\SpriteFont2.xnb
-Content\bullet2.xnb
-Content\damage.xnb
-Content\Fall of Fall.xnb
-Content\sky.xnb
 Content\focus.xnb
 Content\powerup.xnb
-Content\powersound.xnb
 Content\textbox.xnb
-Content\SpriteFont3.xnb
 Content\reimu1.xnb
 Content\reimu2.xnb
 Content\marisa1.xnb
 Content\marisa2.xnb
-Content\Battle.xnb
 Content\marisafly.xnb
-Content\defeat.xnb
 Content\B1.xnb
 Content\B2.xnb
-Content\testbullet.xnb
-Content\testbullet2.xnb
+Content\Battle.xnb
+Content\powersound.xnb
+Content\defeat.xnb
+Content\SpriteFont3.xnb
 Content\A Soul As Red As Ground Cherry.wma
 Content\Song of the Night Sparrow.wma
 Content\Fall of Fall.wma
