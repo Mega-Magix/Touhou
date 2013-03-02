@@ -34,13 +34,6 @@ namespace Touhou.ExampleSprite
         static List<Bullet> eBullets = new List<Bullet>();
         static List<Enemy> enemies = new List<Enemy>();
 
-
-        //Boss data
-        static Boss boss;
-        static Loop[] bossScript1Loops = new Loop[2];
-        static Script bossScript1;
-        
-
         //Arrays and lists for storing texture and sound data
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
@@ -75,9 +68,9 @@ namespace Touhou.ExampleSprite
         static List<Item> items = new List<Item>();
         static List<ScoreText> scoreTexts = new List<ScoreText>();
         static PowerText powerText;
-        static AnimatedTexture playerTexture;
         static AnimatedTexture bossTexture;
         static SoundManager enemyShootManager;
+        static SoundManager damageManager;
 
         static Random random = new Random();
 
@@ -93,8 +86,17 @@ namespace Touhou.ExampleSprite
 
         static int fps = 0;
 
+        public enum PlayerStatus { Alive, Spawning, Dead }
+        public enum item { Point, Power }
+        public enum drawType { Normal, Directional, Animated, AnimatedDirectional, Homing, Spinning, Laser }
+
         static int score = 0;
         static int power = 0;
+
+        //Boss data
+        static Boss boss;
+        static Loop[] bossScript1Loops = new Loop[2];
+        static Script bossScript1;
 
         protected override void LoadContent()
         {
@@ -142,13 +144,14 @@ namespace Touhou.ExampleSprite
             bossScript1Loops[1] = new Loop(20, 0.0, 1, 0.0);
             bossScript1 = new Script(getColoredTexture("B2",Color.Purple), 0.0f, 100.0f, bossScript1Loops);
             //Starting Reimu texture
-            playerTexture = reimuTextures[0];
-            //Create enemy shot sound manager
+            Player.img = reimuTextures[0];
+            //Create sound managers
             enemyShootManager = new SoundManager(sounds["enemyshoot"]);
+            damageManager = new SoundManager(sounds["damage"]);
             //Set screen boundaries
             screenDim = new Vector2(GraphicsDevice.DisplayMode.Width, GraphicsDevice.DisplayMode.Height);
             foregroundDim = screenDim - gameDim;
-            playerPosition = gameDim / 2;
+            Player.pos = gameDim / 2;
             //Play BGM
             MediaPlayer.IsRepeating = true;
             MediaPlayer.Play(songs["Fall of Fall"]);
@@ -161,23 +164,7 @@ namespace Touhou.ExampleSprite
 
         //State of keyboard
         static KeyboardState keystate;
-        //Player and bullet data
-        static Vector2 spriteSpeed = Vector2.Zero;
-        static Vector2 playerPosition;
-        public enum PlayerStatus { Alive, Spawning, Dead }
-        public enum item { Point, Power }
-        public enum bulletType { Normal, Directional, Animated, Homing, Spinning, Laser }
-        static PlayerStatus playerStatus = PlayerStatus.Alive;
-        static float respawnDelay = 3.0f;
-        static float playerSpeed = 120.0f;
-        static float firerate1 = 0.1f;
-        static float firerate2 = 0.5f;
-        static float firedelay1 = 0.0f;
-        static float firedelay2 = 0.0f;
-        static int fireamount1 = 1;
-        static int fireamount2 = 0;
-        static bool focused = false;
-        static float fAngle = 0.0f;
+       
         
 
         static double dt;
@@ -196,9 +183,12 @@ namespace Touhou.ExampleSprite
             dt = gameTime.ElapsedGameTime.TotalSeconds;
             //Get framerate
             fps = (int)(1.0 / dt) + 1;
-
+            //Reset shoot managers
+            enemyShootManager.reset();
+            damageManager.reset();
             //Read keyboard input
-            this.readInput();
+            keystate = Keyboard.GetState();
+            Player.readInput(keystate);
             //Spawn 10 waves of enemies
             if (waves < 10) this.spawnEnemies();
             else if (waves == 10)
@@ -219,152 +209,6 @@ namespace Touhou.ExampleSprite
 
 
             base.Update(gameTime);
-        }
-
-        void readInput()
-        {
-            //Get keyboard state
-            keystate = Keyboard.GetState();
-            //Read keyboard input
-            spriteSpeed = Vector2.Zero;
-            if (firedelay1 >= 0) firedelay1 -= (float)dt;
-            if (firedelay2 >= 0) firedelay2 -= (float)dt;
-            if (keystate.IsKeyDown(Keys.Left)) spriteSpeed.X -= playerSpeed;
-            if (keystate.IsKeyDown(Keys.Right)) spriteSpeed.X += playerSpeed;
-            if (keystate.IsKeyDown(Keys.Up)) spriteSpeed.Y -= playerSpeed;
-            if (keystate.IsKeyDown(Keys.Down)) spriteSpeed.Y += playerSpeed;
-            if (keystate.IsKeyDown(Keys.LeftShift)) { focused = true; spriteSpeed /= 2; }
-            else focused = false;
-            if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && playerStatus != PlayerStatus.Dead && conversation == null)
-            {
-                //Shoot regular bullets at fixed rate based on power when Z is pressed
-                switch (fireamount1)
-                {
-                    case 1:
-                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
-                        0.0f, 750.0f, Color.White, bulletType.Directional));
-                        break;
-                    case 2:
-                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X - 5, playerPosition.Y),
-                        0.0f, 750.0f, Color.White, bulletType.Directional));
-                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X + 5, playerPosition.Y),
-                        0.0f, 750.0f, Color.White, bulletType.Directional));
-                        break;
-                    case 3:
-                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
-                        -10.0f, 750.0f, Color.White, bulletType.Directional));
-                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
-                        0.0f, 750.0f, Color.White, bulletType.Directional));
-                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
-                        10.0f, 750.0f, Color.White, bulletType.Directional));
-                        break;
-                    case 4:
-                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X - 5, playerPosition.Y),
-                        0.0f, 750.0f, Color.White, bulletType.Directional));
-                        pBullets.Add(new Bullet(textures["bullet1"], new Vector2(playerPosition.X + 5, playerPosition.Y),
-                        0.0f, 750.0f, Color.White, bulletType.Directional));
-                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
-                        -10.0f, 750.0f, Color.White, bulletType.Directional));
-                        pBullets.Add(new Bullet(textures["bullet1"], playerPosition,
-                        10.0f, 750.0f, Color.White, bulletType.Directional));
-                        break;
-                }
-
-                sounds["playershoot"].Play();
-                firedelay1 += firerate1;
-            }
-            if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && playerStatus != PlayerStatus.Dead && conversation == null)
-            {
-                //Shoot homing bullets at fixed rate based on power when Z is pressed
-                if (fireamount2 >= 1)
-                {
-                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
-                        -30.0f, 750.0f, Color.White, bulletType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
-                        30.0f, 750.0f, Color.White, bulletType.Homing));
-                }
-                if (fireamount2 >= 2)
-                {
-                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
-                        -50.0f, 750.0f, Color.White, bulletType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
-                        50.0f, 750.0f, Color.White, bulletType.Homing));
-                }
-                if (fireamount2 >= 3)
-                {
-                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
-                        -70.0f, 750.0f, Color.White, bulletType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
-                        70.0f, 750.0f, Color.White, bulletType.Homing));
-                }
-                if (fireamount2 >= 4)
-                {
-                    pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X - 5, playerPosition.Y),
-                    -90.0f, 750.0f, Color.White, bulletType.Homing));
-                    pBullets.Add(new Bullet(textures["bullet2"], new Vector2(playerPosition.X + 5, playerPosition.Y),
-                    90.0f, 750.0f, Color.White, bulletType.Homing));
-                }
-                firedelay2 += firerate2;
-            }
-        }
-
-        public void drawPlayer()
-        {
-            //Respawn the player in the center of the screen and give 5 sec. of invulnerability
-            if (playerStatus == PlayerStatus.Dead)
-            {
-                respawnDelay -= (float)dt;
-                if (respawnDelay <= 0)
-                {
-                    respawnDelay = 5.0f;
-                    playerPosition = gameDim / 2;  playerStatus = PlayerStatus.Spawning;
-                }
-            }
-            else
-            {
-                //Player is alive after invulnerability period runs out
-                if (playerStatus == PlayerStatus.Spawning)
-                {
-                    respawnDelay -= (float)dt;
-                    if (respawnDelay <= 0)
-                    {
-                        respawnDelay = 3.0f;
-                        playerStatus = PlayerStatus.Alive;
-                    }
-                }
-                //Move the player
-                playerPosition += spriteSpeed * (float)dt;
-                //Keep the player on screen
-                playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, gameDim.X );
-                playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, gameDim.Y );
-                //Determine animations based on movement and current animation
-                if (playerTexture == reimuTextures[0])
-                    playerTexture = reimuTextures[1];
-                if (playerTexture == reimuTextures[1] && playerTexture.willFinish(dt))
-                    playerTexture = reimuTextures[2];
-                if (spriteSpeed.X < 0 && playerEffect == SpriteEffects.FlipHorizontally)
-                { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.None; }
-                if (spriteSpeed.X > 0 && playerEffect == SpriteEffects.None)
-                { playerTexture = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
-                if (spriteSpeed.X == 0) playerTexture = reimuTextures[0];
-                //Draw player
-                float[] trans = {0.5f, 1.0f};
-                if (playerStatus == PlayerStatus.Spawning)
-                    //Make player flash if spawning
-                    spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2,
-                    playerTexture.getFrame(), Color.White * trans[(int)(respawnDelay * 2 % 2.0f)], 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
-                else
-                    //Draw player normally if alive
-                    spriteBatch.Draw(playerTexture.img, playerPosition - playerTexture.dim / 2, 
-                    playerTexture.getFrame(), Color.White, 0.0f, Vector2.Zero, 1.0f, playerEffect, 0.5f);
-                //Draw hitbox if player focused
-                fAngle += 0.02f;
-                if (focused)
-                    spriteBatch.Draw(textures["focus"], playerPosition, textures["focus"].Bounds,
-                        Color.White, fAngle, new Vector2(textures["focus"].Width, textures["focus"].Height) / 2,
-                        1.0f, playerEffect, 0.45f);
-            }
-
         }
 
         public void drawForeground()
@@ -457,33 +301,25 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < pBullets.Count; i++)
             {
                 Bullet b = pBullets[i];
-                if (b.type == bulletType.Normal)
-                    spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
-                    Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.4f);
-                else
-                    spriteBatch.Draw(b.img, b.pos, b.img.Bounds,
-                    Color.White, MathHelper.ToRadians(b.angle+90), b.dim / 2, 1.0f, SpriteEffects.None, 0.4f);
-                //Remove bullet if off-screen
-                if (!b.update("enemies"))
-                { pBullets.RemoveAt(i); i--; continue; }
+                if (!b.update()) { pBullets.RemoveAt(i); i--; continue; }
+                b.draw(0.4f);
             }
-
             //Move and draw the player
-            this.drawPlayer();
+            Player.update();
+            Player.draw(0.5f);
 
             //Move and draw enemies
             for (int i = 0; i < enemies.Count; i++)
             {
                 Enemy e = enemies[i];
-                spriteBatch.Draw(e.img.img, e.pos - e.dim / 2, e.img.getFrame(),
-                Color.White, 0.0f, Vector2.Zero, 1.0f, e.effect, 0.3f);
-                if (!e.update())
-                { enemies.RemoveAt(i); i--; continue; }
+                if (!e.update() || e.collide()) { enemies.RemoveAt(i); i--; continue; }
+                e.draw(0.3f);
             }
             //Draw boss
             if (boss != null)
-            spriteBatch.Draw(boss.img.img, boss.pos - boss.dim / 2, boss.img.getFrame(),
-            Color.White, 0.0f, Vector2.Zero, 1.0f, boss.effect, 0.3f);
+            {
+                boss.collide(); boss.draw(0.3f);
+            }
             //Switch blend state for color blending
             spriteBatch.End();
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.NonPremultiplied);
@@ -491,15 +327,8 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < eBullets.Count; i++)
             {
                 Bullet b = eBullets[i];
-                if (b.type == bulletType.Normal)
-                    spriteBatch.Draw(b.img, b.pos - b.dim / 2, b.img.Bounds,
-                    Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.2f);
-                else
-                    spriteBatch.Draw(b.img, b.pos, b.img.Bounds,
-                    Color.White, MathHelper.ToRadians(b.angle + 90), b.dim / 2, 1.0f, SpriteEffects.None, 0.2f);
-                //Remove bullet if off-screen
-                if (!b.update("player"))
-                { eBullets.RemoveAt(i); i--; continue; }
+                if (!b.update() || b.collide()) { eBullets.RemoveAt(i); i--; continue; }
+                b.draw(0.2f);
             }
             //Switch back
             spriteBatch.End();
@@ -508,20 +337,15 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < items.Count; i++)
             {
                 Item x = items[i];
-                spriteBatch.Draw(x.img, x.pos - x.dim / 2, x.img.Bounds, Color.White, 0.0f,
-                    Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
-                //Remove item if off-screen
-                if (!x.update())
-                { items.RemoveAt(i); i--; continue; }
+                if (!x.update()) { items.RemoveAt(i); i--; continue; }
+                x.draw(0.1f);
             }
             //Move and draw score texts
             for (int i = 0; i < scoreTexts.Count; i++)
             {
                 ScoreText t = scoreTexts[i];
+                if (!t.update()) { scoreTexts.RemoveAt(i); i--; continue; }
                 spriteBatch.DrawString(font, t.amount.ToString(), t.pos, t.color);
-                //Remove text after 1 sec.
-                if (!t.update())
-                { scoreTexts.RemoveAt(i); i--; continue; }
             }
             if (powerText != null)
             {
@@ -536,14 +360,8 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < explosions.Count; i++)
             {
                 Explosion e = explosions[i];
-                e.expandAmount += (float)dt * 2 * e.expansionRate;
-                e.alphaAmount -= (float)dt * 2 / e.expansionRate;
-                if (e.alphaAmount <= 0)
-                { explosions.RemoveAt(i); i--; continue; }
-                Color[] testData = new Color[e.img.Width * e.img.Height];
-                e.img.GetData(testData);
-                spriteBatch.Draw(e.img, e.pos - e.dim * e.expandAmount / 2, e.img.Bounds, new Color(255, 255, 255, e.alphaAmount),
-                    0.0f, Vector2.Zero, e.expandAmount, SpriteEffects.None, 0.05f);
+                if (!e.update()) { explosions.RemoveAt(i); i--; continue; }
+                e.draw(0.05f);
             }
             //Switch back
             spriteBatch.End();
@@ -562,8 +380,6 @@ namespace Touhou.ExampleSprite
             //Draw framerate
             spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
 
-
-
             //End drawing sprites
             spriteBatch.End();
             base.Draw(gameTime);
@@ -571,88 +387,216 @@ namespace Touhou.ExampleSprite
 
 
 
-        public class Item
+        public static class Player
         {
-            item type;
-            public Texture2D img;
-            public Vector2 dim;
-            public Vector2 pos;
-            float speed = -1.5f;
-            public Item(item t, Texture2D i, Vector2 p)
+            public static AnimatedTexture img;
+            public static Vector2 dir = Vector2.Zero;
+            public static Vector2 pos;
+            public static PlayerStatus status = PlayerStatus.Alive;
+            public static SpriteEffects effect = SpriteEffects.None;
+            public static float respawnDelay = 3.0f;
+            public static float moveSpeed = 120.0f;
+            public static float firerate1 = 0.1f;
+            public static float firerate2 = 0.5f;
+            public static float firedelay1 = 0.0f;
+            public static float firedelay2 = 0.0f;
+            public static int fireamount1 = 1;
+            public static int fireamount2 = 0;
+            public static bool focused = false;
+            public static float fAngle = 0.0f;
+            public static float getAngle(Vector2 p)
             {
-                type = t;
-                pos = p;
-                img = i;
-                dim = new Vector2(img.Width, img.Height);
+                return -MathHelper.ToDegrees((float)Math.Atan2(p.X - pos.X, p.Y - pos.Y));
             }
-            public bool update()
+            public static void kill()
             {
-                //Cause the item to fall
-                speed += (float)dt;
-                if (speed >= 1.5f) speed = 1.5f;
-                pos.Y += speed;
-                //Return false if item off-screen
-                if (pos.Y > gameDim.Y + 10)
-                    return false;
-                //Check for item collisions with player (but only if the player is not dead)
-                if (Math.Abs(pos.X - playerPosition.X) < playerTexture.dim.X - 10 &&
-                    Math.Abs(pos.Y - playerPosition.Y) < playerTexture.dim.Y - 20 &&
-                    playerStatus != PlayerStatus.Dead)
-                //Destroy item upon collision with player and create text
+                status = PlayerStatus.Dead;
+                sounds["death"].Play();
+                //power = 0;
+                explosions.Add(new Explosion(getColoredTexture("explode", Color.Crimson),
+                    pos, 3.0f, Color.White));
+            }
+            public static void update()
+            {
+                //Respawn the player in the center of the screen and give 5 sec. of invulnerability
+                if (status == PlayerStatus.Dead)
                 {
-                    sounds["item"].Play();
-                    if (type == item.Power)
+                    respawnDelay -= (float)dt;
+                    if (respawnDelay <= 0)
                     {
-                        scoreTexts.Add(new ScoreText(10, pos, Color.White));
-                        power++;
-                        if (power >= 8 && fireamount2 <= 0)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount2 = 1; sounds["powersound"].Play();
-                        }
-                        if (power >= 16 && fireamount1 <= 1)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount1 = 2; sounds["powersound"].Play();
-                        }
-                        if (power >= 32 && fireamount2 <= 1)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount2 = 2; sounds["powersound"].Play();
-                        }
-                        if (power >= 48 && fireamount1 <= 2)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount1 = 3; sounds["powersound"].Play();
-                        }
-                        if (power >= 64 && fireamount2 <= 2)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount2 = 3; sounds["powersound"].Play();
-                        }
-                        if (power >= 96 && fireamount1 <= 3)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount1 = 4; sounds["powersound"].Play();
-                        }
-                        if (power >= 128 && fireamount2 <= 3)
-                        {
-                            powerText = new PowerText(textures["powerup"], playerPosition, Color.White);
-                            fireamount2 = 4; sounds["powersound"].Play();
-                        }
-                        if (power > 128) power = 128;
-
+                        respawnDelay = 5.0f;
+                        pos = gameDim / 2; status = PlayerStatus.Spawning;
                     }
-                    else
-                    {
-                        if (playerPosition.Y < 150)
-                            scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
-                        else scoreTexts.Add(new ScoreText(100000 - (int)playerPosition.Y * 100, pos, Color.White));
-                    }
-                    //Return false to indicate item destruction
-                    return false;
                 }
-                return true;
+                else
+                {
+                    //Player is alive after invulnerability period runs out
+                    if (status == PlayerStatus.Spawning)
+                    {
+                        respawnDelay -= (float)dt;
+                        if (respawnDelay <= 0)
+                        {
+                            respawnDelay = 3.0f;
+                            status = PlayerStatus.Alive;
+                        }
+                    }
+                    //Move the player
+                    pos += dir * (float)dt;
+                    //Keep the player on screen
+                    pos.X = MathHelper.Clamp(pos.X, 0, gameDim.X);
+                    pos.Y = MathHelper.Clamp(pos.Y, 0, gameDim.Y);
+                    //Determine animations based on movement and current animation
+                    if (img == reimuTextures[0])
+                        img = reimuTextures[1];
+                    if (img == reimuTextures[1] && img.willFinish(dt))
+                        img = reimuTextures[2];
+                    if (dir.X < 0 && playerEffect == SpriteEffects.FlipHorizontally)
+                    { img = reimuTextures[1]; playerEffect = SpriteEffects.None; }
+                    if (dir.X > 0 && playerEffect == SpriteEffects.None)
+                    { img = reimuTextures[1]; playerEffect = SpriteEffects.FlipHorizontally; }
+                    if (dir.X == 0) img = reimuTextures[0];
+                    //Spin focus glyph
+                    fAngle += 0.02f;
+                    
+                }
+
+            }
+            public static void draw(float layer)
+            {
+                float[] transCycle = { 0.5f, 1.0f };
+                float trans = 1.0f;
+                if (status == PlayerStatus.Spawning) trans = transCycle[(int)(respawnDelay * 2 % 2.0f)];
+                if (status == PlayerStatus.Dead) trans = 0.0f;
+                spriteBatch.Draw(img.img, pos - img.dim / 2,
+                img.getFrame(), Color.White * trans, 0.0f, Vector2.Zero, 1.0f, playerEffect, layer);
+                //Draw hitbox if player focused
+                if (focused && status != PlayerStatus.Dead)
+                    spriteBatch.Draw(textures["focus"], pos, textures["focus"].Bounds,
+                        Color.White, fAngle, new Vector2(textures["focus"].Width, textures["focus"].Height) / 2,
+                        1.0f, playerEffect, layer - 0.01f);
+            }
+            public static void powerUp()
+            {
+                if (power >= 8 && fireamount2 <= 0)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount2 = 1; sounds["powersound"].Play();
+                }
+                if (power >= 16 && fireamount1 <= 1)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount1 = 2; sounds["powersound"].Play();
+                }
+                if (power >= 32 && fireamount2 <= 1)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount2 = 2; sounds["powersound"].Play();
+                }
+                if (power >= 48 && fireamount1 <= 2)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount1 = 3; sounds["powersound"].Play();
+                }
+                if (power >= 64 && fireamount2 <= 2)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount2 = 3; sounds["powersound"].Play();
+                }
+                if (power >= 96 && fireamount1 <= 3)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount1 = 4; sounds["powersound"].Play();
+                }
+                if (power >= 128 && fireamount2 <= 3)
+                {
+                    powerText = new PowerText(textures["powerup"], pos, Color.White);
+                    fireamount2 = 4; sounds["powersound"].Play();
+                }
+                if (power > 128) power = 128;
+            }
+            public static void readInput(KeyboardState keystate)
+            {
+                //Read keyboard input
+                dir = Vector2.Zero;
+                if (firedelay1 >= 0) firedelay1 -= (float)dt;
+                if (firedelay2 >= 0) firedelay2 -= (float)dt;
+                if (keystate.IsKeyDown(Keys.Left)) dir.X -= moveSpeed;
+                if (keystate.IsKeyDown(Keys.Right)) dir.X += moveSpeed;
+                if (keystate.IsKeyDown(Keys.Up)) dir.Y -= moveSpeed;
+                if (keystate.IsKeyDown(Keys.Down)) dir.Y += moveSpeed;
+                if (keystate.IsKeyDown(Keys.LeftShift)) { focused = true; dir /= 2; }
+                else focused = false;
+                if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && status != PlayerStatus.Dead && conversation == null)
+                {
+                    //Shoot regular bullets at fixed rate based on power when Z is pressed
+                    switch (fireamount1)
+                    {
+                        case 1:
+                            pBullets.Add(new Bullet(textures["bullet1"], pos,
+                            0.0f, 750.0f, Color.White, drawType.Directional));
+                            break;
+                        case 2:
+                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X - 5, pos.Y),
+                            0.0f, 750.0f, Color.White, drawType.Directional));
+                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X + 5, pos.Y),
+                            0.0f, 750.0f, Color.White, drawType.Directional));
+                            break;
+                        case 3:
+                            pBullets.Add(new Bullet(textures["bullet1"], pos,
+                            -10.0f, 750.0f, Color.White, drawType.Directional));
+                            pBullets.Add(new Bullet(textures["bullet1"], pos,
+                            0.0f, 750.0f, Color.White, drawType.Directional));
+                            pBullets.Add(new Bullet(textures["bullet1"], pos,
+                            10.0f, 750.0f, Color.White, drawType.Directional));
+                            break;
+                        case 4:
+                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X - 5, pos.Y),
+                            0.0f, 750.0f, Color.White, drawType.Directional));
+                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X + 5, pos.Y),
+                            0.0f, 750.0f, Color.White, drawType.Directional));
+                            pBullets.Add(new Bullet(textures["bullet1"], pos,
+                            -10.0f, 750.0f, Color.White, drawType.Directional));
+                            pBullets.Add(new Bullet(textures["bullet1"], pos,
+                            10.0f, 750.0f, Color.White, drawType.Directional));
+                            break;
+                    }
+
+                    sounds["playershoot"].Play();
+                    firedelay1 += firerate1;
+                }
+                if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && status != PlayerStatus.Dead && conversation == null)
+                {
+                    //Shoot homing bullets at fixed rate based on power when Z is pressed
+                    if (fireamount2 >= 1)
+                    {
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        -30.0f, 750.0f, Color.White, drawType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        30.0f, 750.0f, Color.White, drawType.Homing));
+                    }
+                    if (fireamount2 >= 2)
+                    {
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        -50.0f, 750.0f, Color.White, drawType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        50.0f, 750.0f, Color.White, drawType.Homing));
+                    }
+                    if (fireamount2 >= 3)
+                    {
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        -70.0f, 750.0f, Color.White, drawType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        70.0f, 750.0f, Color.White, drawType.Homing));
+                    }
+                    if (fireamount2 >= 4)
+                    {
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        -90.0f, 750.0f, Color.White, drawType.Homing));
+                        pBullets.Add(new Bullet(textures["bullet2"], pos,
+                        90.0f, 750.0f, Color.White, drawType.Homing));
+                    }
+                    firedelay2 += firerate2;
+                }
             }
         }
 
@@ -684,9 +628,11 @@ namespace Touhou.ExampleSprite
             }
         }
 
-        public class Bullet
+        public class Sprite
         {
             public Texture2D img;
+            public AnimatedTexture imgA;
+            public Rectangle rect;
             public Vector2 dim;
             public Vector2 pos;
             public Vector2 dir;
@@ -694,39 +640,82 @@ namespace Touhou.ExampleSprite
             public float angle;
             public float radians;
             public Color color;
-            public float hitRadius;
-            public String collision;
-            public bulletType type;
-            //Constructor given angular direction
-            public Bullet(Texture2D t, Vector2 p, float a, float s, Color c, bulletType ty)
+            public drawType type;
+            public Sprite(Texture2D t, Vector2 p, float a, float s, Color c, drawType ty)
             {
                 img = t; pos = p; angle = a - 90.0f; speed = s; type = ty;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
-                dim = new Vector2(img.Width, img.Height);
-                color = c;
+                dim = new Vector2(t.Width, t.Height); color = c;
             }
-            //Constructor given vector direction
-            public Bullet(Texture2D t, Vector2 p, Vector2 d, Color c, bulletType ty)
+            public Sprite(Texture2D t, Vector2 p, Vector2 d, Color c, drawType ty)
             {
                 img = t; pos = p; dir = d; type = ty;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X))+90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
-                dim = new Vector2(img.Width, img.Height);
-                color = c;
+                dim = new Vector2(t.Width, t.Height); color = c;
             }
-            //Update method to move the bullet and check for collisions
-            public bool update(String c)
+            public Sprite(AnimatedTexture t, Vector2 p, float a, float s, Color c, drawType ty)
             {
-                //Move the bullet
+                imgA = t; pos = p; angle = a - 90.0f; speed = s; type = ty;
+                radians = MathHelper.ToRadians(angle);
+                dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
+                dim = t.dim; color = c;
+            }
+            public Sprite(AnimatedTexture t, Vector2 p, Vector2 d, Color c, drawType ty)
+            {
+                imgA = t; pos = p; dir = d; type = ty;
+                angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
+                speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
+                dim = t.dim; color = c;
+            }
+            virtual public bool update()
+            {
+                //Move the sprite
                 pos += dir * speed * (float)dt;
-                if (type == bulletType.Homing)
+                //Return false if sprite off-screen
+                if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
+                    return false;
+                return true;
+            }
+            public void draw(float layer)
+            {
+                switch (type)
+                {
+                    case drawType.Normal:
+                        spriteBatch.Draw(img, pos - dim / 2, img.Bounds,
+                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, layer);
+                        break;
+                    case drawType.Directional:
+                        spriteBatch.Draw(img, pos, img.Bounds,
+                        Color.White, MathHelper.ToRadians(angle + 90.0f), dim / 2, 1.0f,
+                        SpriteEffects.None, layer);
+                        break;
+                    case drawType.Homing:
+                        homeIn();
+                        spriteBatch.Draw(img, pos, img.Bounds,
+                        Color.White, MathHelper.ToRadians(angle + 90.0f), dim / 2, 1.0f,
+                        SpriteEffects.None, layer);
+                        break;
+                    case drawType.Animated:
+                        spriteBatch.Draw(imgA.img, pos - dim / 2, imgA.getFrame(),
+                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, layer);
+                        break;
+                    case drawType.AnimatedDirectional:
+                        spriteBatch.Draw(imgA.img, pos, imgA.getFrame(),
+                        Color.White, MathHelper.ToRadians(angle + 90.0f), dim / 2, 1.0f,
+                        SpriteEffects.None, layer);
+                        break;
+                }
+            }
+            public void homeIn()
+            {
                 {
                     float minDist = 10000.0f;
                     float minAngle = 0.0f;
                     for (int i = 0; i < enemies.Count; i++)
                     {
-                        float dist = (float)Math.Sqrt((enemies[i].pos.X - pos.X) * (enemies[i].pos.X - pos.X) + 
+                        float dist = (float)Math.Sqrt((enemies[i].pos.X - pos.X) * (enemies[i].pos.X - pos.X) +
                             (enemies[i].pos.Y - pos.Y) * (enemies[i].pos.Y - pos.Y));
                         if (dist < minDist)
                         {
@@ -744,91 +733,42 @@ namespace Touhou.ExampleSprite
                         dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
                     }
                 }
-
-                //Return false if bullet off-screen
-                if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
-                    return false;
-                if (c == "player")
-                {
-                    //Check for bullet collisions with player
-                    if (Math.Sqrt((playerPosition.X - pos.X) * (playerPosition.X - pos.X) +
-                        (playerPosition.Y - pos.Y) * (playerPosition.Y - pos.Y)) < 5.0 &&
-                        playerStatus != PlayerStatus.Dead)
-                    {
-                        //If the player is alive, kill the player and create large explosion
-                        if (playerStatus == PlayerStatus.Alive)
-                        {
-                            playerStatus = PlayerStatus.Dead;
-                            sounds["death"].Play();
-                            //power = 0;
-                            explosions.Add(new Explosion(getColoredTexture("explode",Color.Crimson),
-                                playerPosition,3.0f, Color.White));
-                        }
-                        //Return false to indicate bullet destruction
-                        return false;
-                    }
-                }
-                else
-                {
-                    //Check for bullet collisions with enemies
-                    for (int i = 0; i < enemies.Count; i++)
-                    {
-                        if (Math.Abs(enemies[i].pos.X - pos.X) < enemies[i].dim.X &&
-                            Math.Abs(enemies[i].pos.Y - pos.Y) < enemies[i].dim.Y)
-                        {
-                            //Destroy bullet and damage enemy
-                            enemies[i].health--;
-                            sounds["damage"].Play();
-                            if (enemies[i].health <= 0)
-                            {
-                                if (enemies[i] == boss)
-                                {
-                                    //Destroy boss and create lots of items and huge explosion
-                                    explosions.Add(new Explosion(getColoredTexture("explode",Color.Yellow),
-                                        enemies[i].pos,5.0f, enemies[i].color));
-                                    score += 1000000;
-                                    sounds["defeat"].Play();
-                                    for (int j = 0; j < 50; j++)
-                                    {
-                                        items.Add(new Item(item.Point, textures["itempoint"],
-                                            boss.pos + new Vector2(random.Next(-50, 50),random.Next(-50,50))));
-                                    }
-                                    boss = null;
-                                    enemies.RemoveAt(i); i--;
-                                }
-                                else
-                                {
-                                    //Destroy enemy and create explosion and item
-                                    explosions.Add(new Explosion(getColoredTexture("explode",enemies[i].color),
-                                        enemies[i].pos, 1.0f, enemies[i].color));
-                                    score += 1000;
-                                    if (random.Next(2) == 0)
-                                        items.Add(new Item(item.Point, textures["itempoint"], enemies[i].pos));
-                                    else
-                                        items.Add(new Item(item.Power, textures["itempower"], enemies[i].pos));
-                                    sounds["explodesound"].Play();
-                                    enemies.RemoveAt(i); i--;
-                                }
-                            }
-                            return false;
-                        }
-                    }
-                    
-                }
-                return true;
             }
         }
 
-        public class Enemy
+
+        public class Bullet : Sprite
         {
-            public AnimatedTexture img;
-            public Vector2 dim;
-            public Vector2 pos;
-            public Vector2 dir;
-            public float speed;
-            public float angle;
-            public float radians;
-            public Color color;
+            public float hitRadius;
+            //Constructor given angular direction
+            public Bullet(Texture2D t, Vector2 p, float a, float s, Color c, drawType ty)
+                : base(t, p, a, s, c, ty) { }
+            //Constructor given vector direction
+            public Bullet(Texture2D t, Vector2 p, Vector2 d, Color c, drawType ty)
+                : base(t, p, d, c, ty) { }
+            public Bullet(AnimatedTexture t, Vector2 p, float a, float s, Color c, drawType ty)
+                : base(t, p, a, s, c, ty) { }
+            //Constructor given vector direction
+            public Bullet(AnimatedTexture t, Vector2 p, Vector2 d, Color c, drawType ty)
+                : base(t, p, d, c, ty) { }
+            //Check for collisions
+            public bool collide()
+            {   
+                //Check for bullet collisions with player
+                if (Math.Sqrt((Player.pos.X - pos.X) * (Player.pos.X - pos.X) +
+                    (Player.pos.Y - pos.Y) * (Player.pos.Y - pos.Y)) < 5.0 &&
+                    Player.status != PlayerStatus.Dead)
+                {
+                    //If the player is alive, kill the player and create large explosion
+                    if (Player.status == PlayerStatus.Alive) Player.kill();
+                    //Return true to indicate collision
+                    return true;
+                }
+                return false;
+            }
+        }
+        public class Enemy : Sprite
+        {
             public int health;
             public SpriteEffects effect = SpriteEffects.None;
             public int script;
@@ -836,55 +776,57 @@ namespace Touhou.ExampleSprite
             public float sRate = 1.0f;
             //Constructor given angular direction
             public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, int scr)
+                : base(t, p, a, s, c, drawType.Animated)
             {
-                img = t; pos = p; angle = a - 90.0f; speed = s; health = h; script = scr;
-                radians = MathHelper.ToRadians(angle);
-                dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
-                dim = img.dim; color = c;
+                health = h; script = scr;
             }
             //Constructor given vector direction
             public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, int scr)
+                : base(t, p, d, c, drawType.Animated)
             {
-                img = t; pos = p; dir = d; health = h; script = scr;
-                angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
-                speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
+                health = h; script = scr;
             }
             //Update method to move the enemy and check for collisions
-            public bool update()
+            override public bool update()
             {
-                //Move the enemy
+                //Move the sprite
                 pos += dir * speed * (float)dt;
                 //Have the enemy shoot
                 sDelay -= (float)dt;
-                if (sDelay <= 0 && script > 0)
+                if (sDelay <= 0)
                 {
-                    eBullets.AddRange(this.shoot()); enemyShootManager.play(); sDelay += sRate;
+                    sDelay += sRate;
+                    eBullets.AddRange(shoot());
+                    enemyShootManager.play();
                 }
-                //Return false if enemy off-screen
+                //Return false if sprite off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
-                //Check for enemy collisions with player (but only if the player is not dead)
-                if (Math.Abs(pos.X - playerPosition.X) < dim.X - 10 &&
-                    Math.Abs(pos.Y - playerPosition.Y) < dim.Y - 10 &&
-                    playerStatus != PlayerStatus.Dead)
-                //Destroy enemy upon collision with player and create explosion
-                {
-                    explosions.Add(new Explosion(getColoredTexture("explode",color), pos,
-                        1.0f, color));
-                    sounds["explodesound"].Play();
-                    //If the player is alive, kill the player and create large explosion
-                    if (playerStatus == PlayerStatus.Alive)
-                    {
-                        playerStatus = PlayerStatus.Dead;
-                        sounds["death"].Play();
-                        //power = 0;
-                        explosions.Add(new Explosion(getColoredTexture("explode", Color.Crimson),
-                                playerPosition, 3.0f, Color.White));
-                    }
-                    //Return false to indicate enemy destruction
-                    return false;
-                }
                 return true;
+            }
+            public bool collide()
+            {
+                //Check for enemy collisions with player (but only if the player is alive)
+                if (Math.Abs(pos.X - Player.pos.X) < dim.X - 10 &&
+                    Math.Abs(pos.Y - Player.pos.Y) < dim.Y - 10 &&
+                    Player.status == PlayerStatus.Alive) Player.kill();
+                //Check for enemy collisions with player bullets
+                for (int i = 0; i < pBullets.Count; i++)
+                {
+                    if (Math.Abs(pBullets[i].pos.X - pos.X) < dim.X &&
+                        Math.Abs(pBullets[i].pos.Y - pos.Y) < dim.Y)
+                    {
+                        //Destroy bullet and damage enemy
+                        health--;
+                        pBullets.RemoveAt(i); i--;
+                        damageManager.play();
+                        if (health <= 0)
+                        {
+                            explode(); return true;
+                        }
+                    }
+                }
+                return false;
             }
             public List<Bullet> shoot()
             {
@@ -895,6 +837,18 @@ namespace Touhou.ExampleSprite
                 }
                 return null;
             }
+            virtual public void explode()
+            {
+                //Destroy enemy and create explosion and item
+                explosions.Add(new Explosion(getColoredTexture("explode", color),
+                    pos, 1.0f, color));
+                score += 1000;
+                if (random.Next(2) == 0)
+                    items.Add(new Item(item.Point, textures["itempoint"], pos));
+                else
+                    items.Add(new Item(item.Power, textures["itempower"], pos));
+                sounds["explodesound"].Play();
+            }
         }
         public class Boss : Enemy
         {
@@ -904,38 +858,20 @@ namespace Touhou.ExampleSprite
             public Boss(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr)
                 : base(t, p, a, s, c, h, 0)
             {
-                img = t; pos = p; angle = a - 90.0f; speed = s; health = h; script = scr;
+                imgA = t; pos = p; angle = a - 90.0f; speed = s; health = h; script = scr;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
-                dim = img.dim; color = c;
+                dim = imgA.dim; color = c;
             }
             //Constructor given vector direction
             public Boss(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr)
                 : base(t, p, d, c, h, 0)
             {
-                img = t; pos = p; dir = d; health = h; script = scr;
+                imgA = t; pos = p; dir = d; health = h; script = scr;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
+                dim = imgA.dim; color = c;
             }
-            public bool update()
-            {
-                //Check for enemy collisions with player (but only if the player is alive)
-                if (Math.Abs(pos.X - playerPosition.X) < dim.X - 10 &&
-                    Math.Abs(pos.Y - playerPosition.Y) < dim.Y - 10 &&
-                    playerStatus == PlayerStatus.Alive)
-                    //Kill the player and create large explosion
-                    if (playerStatus == PlayerStatus.Alive)
-                    {
-                        playerStatus = PlayerStatus.Dead;
-                        sounds["death"].Play();
-                        //power = 0;
-                        explosions.Add(new Explosion(textures["explode"], playerPosition,
-                            3.0f, Color.White));
-                    }
-                return true;
-                }
-            
-            
             //Method to make the boss enter the screen
             public void enter()
             {
@@ -944,6 +880,69 @@ namespace Touhou.ExampleSprite
                 {
                     isEntering = false; pos.X = gameDim.X / 2;
                 }
+            }
+            override public bool update()
+            {
+                return true;
+            }
+            override public void explode()
+            {
+                //Destroy boss and create lots of items and huge explosion
+                explosions.Add(new Explosion(getColoredTexture("explode", Color.Yellow),
+                    pos, 5.0f, color));
+                score += 1000000;
+                sounds["defeat"].Play();
+                for (int j = 0; j < 50; j++)
+                {
+                    items.Add(new Item(item.Point, textures["itempoint"],
+                        boss.pos + new Vector2(random.Next(-50, 50), random.Next(-50, 50))));
+                }
+                boss = null;
+            }
+        }
+        public class Item : Sprite
+        {
+            item type;
+            float speed = -1.5f;
+            public Item(item t, Texture2D i, Vector2 p)
+                : base(i, p, Vector2.Zero, Color.White, drawType.Normal)
+            {
+                type = t;
+                pos = p;
+                img = i;
+                dim = new Vector2(img.Width, img.Height);
+            }
+            override public bool update()
+            {
+                //Cause the item to fall
+                speed += (float)dt;
+                if (speed >= 1.5f) speed = 1.5f;
+                pos.Y += speed;
+                //Return false if item off-screen
+                if (pos.Y > gameDim.Y + 10)
+                    return false;
+                //Check for item collisions with player (but only if the player is not dead)
+                if (Math.Abs(pos.X - Player.pos.X) < Player.img.dim.X - 10 &&
+                    Math.Abs(pos.Y - Player.pos.Y) < Player.img.dim.Y - 20 &&
+                    Player.status != PlayerStatus.Dead)
+                //Destroy item upon collision with player and create text
+                {
+                    sounds["item"].Play();
+                    if (type == item.Power)
+                    {
+                        scoreTexts.Add(new ScoreText(10, pos, Color.White));
+                        power++; Player.powerUp();
+                    }
+                    else
+                    {
+                        if (Player.pos.Y < 150)
+                            scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
+                        else scoreTexts.Add(new ScoreText(100000 - (int)Player.pos.Y * 100, pos, Color.White));
+                    }
+                    //Return false to indicate item destruction
+                    return false;
+                }
+                return true;
             }
         }
 
@@ -960,6 +959,19 @@ namespace Touhou.ExampleSprite
             public Explosion(Texture2D i, Vector2 p, float e, Color c)
             {
                 img = i; pos = p; dim = new Vector2(i.Width, i.Height); expansionRate = e; color = c;
+            }
+            public bool update()
+            {
+                expandAmount += (float)dt * 2 * expansionRate;
+                alphaAmount -= (float)dt * 2 / expansionRate;
+                if (alphaAmount <= 0) return false;
+                return true;
+                
+            }
+            public void draw(float layer)
+            {
+                spriteBatch.Draw(img, pos - dim * expandAmount / 2, img.Bounds, new Color(255, 255, 255, alphaAmount),
+                    0.0f, Vector2.Zero, expandAmount, SpriteEffects.None, layer);
             }
         }
 
@@ -1138,7 +1150,7 @@ namespace Touhou.ExampleSprite
                             if (loopLevel >= loopData.Length - 1)
                             {
                                 eBullets.Add(new Bullet(img,
-                                boss.pos, angle, speed, Color.White, bulletType.Directional));
+                                boss.pos, angle, speed, Color.White, drawType.Directional));
                                 enemyShootManager.play();
                             }
                             else
@@ -1198,18 +1210,17 @@ namespace Touhou.ExampleSprite
             public int frame = 0;
             public double speed;
             public double delay;
-            //Constructor taking texture file, number of frames, frame rate, and optional effects
+            //Constructor taking texture file, number of frames, and frame rate
             public AnimatedTexture(Texture2D t, int f, double s)
             {
                 img = t; frames = f; delay = speed = s;
-                dim = new Vector2(img.Width / frames, img.Height);
+                dim = new Vector2(t.Width / frames, t.Height);
             }
             //Constructor making a new instance as a copy. Use this to make several instances of
             //AnimatedTexture to animate seperately.
             public AnimatedTexture(AnimatedTexture a)
             {
-                img = a.img; frames = a.frames; delay = a.delay; speed = a.speed; delay = speed;
-                dim = a.dim;
+                img = a.img;  frames = a.frames; delay = a.delay; speed = a.speed; delay = speed; dim = a.dim;
             }
             //Gets a rectangle representing the frame to be drawn. Needs to be called each update
             public Rectangle getFrame()
@@ -1220,7 +1231,7 @@ namespace Touhou.ExampleSprite
                     delay += speed; frame++;
                     if (frame >= frames) frame = 0;
                 }
-                return new Rectangle(img.Width * frame / frames, 0, img.Width / frames, img.Height);
+                return new Rectangle((int)dim.X * frame, 0, (int)dim.X, (int)dim.Y);
             }
             //Detects if an animation is about to finish.
             public bool willFinish(double dt)
@@ -1236,19 +1247,18 @@ namespace Touhou.ExampleSprite
         {
             List<Bullet> l = new List<Bullet>();
             l.Add(new Bullet(getColoredTexture("B1", Color.Red), pos, random.Next(0, 360),
-                100, Color.White, bulletType.Normal));
+                100, Color.White, drawType.Normal));
             return l;
         }
 
         public static List<Bullet> shoot2(Vector2 pos)
         {
             List<Bullet> l = new List<Bullet>();
-            float a = -MathHelper.ToDegrees((float)Math.Atan2(pos.X - playerPosition.X,
-                pos.Y - playerPosition.Y));
+            float a = Player.getAngle(pos);
             for (int i = -60; i <= 60; i += 30)
             {
                 l.Add(new Bullet(getColoredTexture("B2", new Color(50,50,255)), pos, a + i,
-                    100, Color.White, bulletType.Directional));
+                    100, Color.White, drawType.Directional));
             }
             return l;
         }
