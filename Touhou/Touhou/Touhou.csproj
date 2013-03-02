@@ -144,6 +144,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enemy.cs" />
     <Compile Include="ExampleSprite.cs" />
     <Compile Include="Effects.cs" />
     <Compile Include="Player.cs" />

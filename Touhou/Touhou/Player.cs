@@ -17,7 +17,7 @@ namespace Touhou.Battle
     {
         public Level level;
 
-        public Effects.AnimatedTexture playerAnimation;
+        public Effects.AnimatedTexture animation;
         Texture2D bulletTexture;
 
         // Setup player animation sets
@@ -27,12 +27,12 @@ namespace Touhou.Battle
         List<int> playerAnimationRight = new List<int> { 17, 16, 15, 14 };
         List<int> playerAnimationRightAccel = new List<int> { 13, 12, 11 };
 
-        Vector2 playerPosition = Vector2.Zero;
-        Vector2 playerVelocity = Vector2.Zero;
+        Vector2 position = Vector2.Zero;
+        Vector2 velocity = Vector2.Zero;
 
-        float playerSpeed = 170.0f;
-        float playerFireWait = 0.0f;
-        float playerFireDelay = 0.1f;
+        float speed = 170.0f;
+        float fireWait = 0.0f;
+        float fireDelay = 0.1f;
 
         float oldDX;
         float oldDY;
@@ -47,9 +47,9 @@ namespace Touhou.Battle
             Texture2D playerAnimationTexture;
 
             playerAnimationTexture = game.Content.Load<Texture2D>("reimu");
-            playerAnimation = new Effects.AnimatedTexture(playerAnimationTexture, playerPosition, 18, 0.1);
+            animation = new Effects.AnimatedTexture(playerAnimationTexture, position, 18, 0.1);
             // Setup final animation sets
-            playerAnimation.animationSets = new Dictionary<string, List<int>>()
+            animation.animationSets = new Dictionary<string, List<int>>()
 	        {
 	            {"Fly", playerAnimationFly},
                 {"Left Accel", playerAnimationLeftAccel},
@@ -57,7 +57,7 @@ namespace Touhou.Battle
                 {"Right Accel", playerAnimationRightAccel},
                 {"Right", playerAnimationRight},
 	        };
-            playerAnimation.animationSet = "Fly";
+            animation.animationSet = "Fly";
 
             soundShoot = game.Content.Load<SoundEffect>("playershoot");
 
@@ -68,76 +68,76 @@ namespace Touhou.Battle
         public void Update(float dt, KeyboardState keystate)
         {
 
-            oldDX = playerVelocity.X;
-            oldDY = playerVelocity.Y;
+            oldDX = velocity.X;
+            oldDY = velocity.Y;
 
             // Move the player if the arrow keys are pressed
-            playerVelocity = Vector2.Zero;
+            velocity = Vector2.Zero;
             if (keystate.IsKeyDown(Keys.Left))
             {
-                playerVelocity.X += -playerSpeed;
+                velocity.X += -speed;
             }
             if (keystate.IsKeyDown(Keys.Right))
             {
-                playerVelocity.X += playerSpeed;
+                velocity.X += speed;
             }
             if (keystate.IsKeyDown(Keys.Up))
             {
-                playerVelocity.Y += -playerSpeed;
+                velocity.Y += -speed;
             }
             if (keystate.IsKeyDown(Keys.Down))
             {
-                playerVelocity.Y += playerSpeed;
+                velocity.Y += speed;
             }
 
             // Animate the player based on velocity
-            if (playerVelocity.X < 0.0f)
+            if (velocity.X < 0.0f)
             {
                 // Moving left
-                if (playerAnimation.animationSet != "Left")
+                if (animation.animationSet != "Left")
                 {
-                    playerAnimation.animationSet = "Left Accel";
-                    playerAnimation.nextAnimationSet = "Left";
+                    animation.animationSet = "Left Accel";
+                    animation.nextAnimationSet = "Left";
                 }
             }
-            else if (playerVelocity.X > 0.0f)
+            else if (velocity.X > 0.0f)
             {
                 // Moving right
-                if (playerAnimation.animationSet != "Right")
+                if (animation.animationSet != "Right")
                 {
-                    playerAnimation.animationSet = "Right Accel";
-                    playerAnimation.nextAnimationSet = "Right";
+                    animation.animationSet = "Right Accel";
+                    animation.nextAnimationSet = "Right";
                 }
             }
             else
             {
-                playerAnimation.animationSet = "Fly";
+                animation.animationSet = "Fly";
             }
 
             //Move the player sprite based on its speed
-            playerPosition += playerVelocity * dt;
-            playerAnimation.position = playerPosition;
+            position += velocity * dt;
+            animation.position = position;
 
-            playerAnimation.Update(dt);
+            animation.Update(dt);
 
             // Make sure that the player stays on the screen
-            playerPosition.X = MathHelper.Clamp(playerPosition.X, 0, level.width - playerAnimation.width);
-            playerPosition.Y = MathHelper.Clamp(playerPosition.Y, 0, level.height - playerAnimation.height);
+            position.X = MathHelper.Clamp(position.X, 0, level.width - animation.width);
+            position.Y = MathHelper.Clamp(position.Y, 0, level.height - animation.height);
 
             //Decrease the player firing delay
-            if (playerFireWait > 0.0f)
-                playerFireWait -= dt;
+            if (fireWait > 0.0f)
+                fireWait -= dt;
 
             //Check to see if the player will fire a bullet
             if (keystate.IsKeyDown(Keys.Z))
             {
-                if (playerFireWait <= 0.0f)
+                if (fireWait <= 0.0f)
                 {
-                    playerFireWait = playerFireDelay;
+                    fireWait = fireDelay;
                     // Fire a new player bullet
                     Vector2 bulletPosition;
-                    bulletPosition.X = playerPosition.X + (playerAnimation.width - bulletTexture.Width) / 2;
-                    bulletPosition.Y = playerPosition.Y + (playerAnimation.height - bulletTexture.Height) / 2;
+                    bulletPosition.X = position.X + (animation.width - bulletTexture.Width) / 2;
+                    bulletPosition.Y = position.Y + (animation.height - bulletTexture.Height) / 2;
                     Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
                     level.addBullet(bullet, BulletSet.Player);
                     soundShoot.Play();

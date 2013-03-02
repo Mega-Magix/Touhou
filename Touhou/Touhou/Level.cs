@@ -13,7 +13,10 @@ namespace Touhou.Battle
 {
     public class Level
     {
+        public Game game;
+
         Player player;
+        List<Enemy> enemies = new List<Enemy>();
 
         Song music;
 
@@ -28,8 +31,13 @@ namespace Touhou.Battle
 
         SpriteBatch spriteBatch;
 
+        float testEnemyWait = 0;
+        float testEnemyDelay = 1;
+
         public Level(Game game)
         {
+            this.game = game;
+
             // Load images and sprites
             spriteBatch = new SpriteBatch(game.GraphicsDevice);
 
@@ -44,6 +52,8 @@ namespace Touhou.Battle
 
             width = game.GraphicsDevice.Viewport.Width;
             height = game.GraphicsDevice.Viewport.Height;
+
+            addEnemy(new Enemy(this.game, this, 100, 0, 50));
         }
         
         public void addBullet(Bullet newBullet, BulletSet bulletSet)
@@ -53,12 +63,29 @@ namespace Touhou.Battle
             else if (bulletSet == BulletSet.Player)
                 playerBullets.Add(newBullet);
         }
+        public void addEnemy(Enemy enemy)
+        {
+            enemies.Add(enemy);
+        }
 
         public void Update(GameTime gameTime, KeyboardState keystate)
         {
             dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             player.Update(dt, keystate);
+
+            // Update each enemy on the screen
+            Enemy enemy;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                enemy = enemies[i];
+                enemy.Update(dt);
+                if (enemy.destroyed == true)
+                {
+                    enemies.RemoveAt(i);
+                    i--;
+                }
+            }
 
             //Update each bullet on the screen.
             for (int i = 0; i < playerBullets.Count; i++)
@@ -96,8 +123,15 @@ namespace Touhou.Battle
 
             //spriteBatch.Draw(playerTexture, playerPosition, Color.White);
 
-            player.playerAnimation.Draw(spriteBatch);
+            player.animation.Draw(spriteBatch);
 
+            //Draw each enemy on the screen
+            Enemy enemy;
+            for (int i = 0; i < enemies.Count; i++)
+            {
+                enemy = enemies[i];
+                enemy.animation.Draw(spriteBatch);
+            }
             //Draw each bullet on the screen
             for (int i = 0; i < playerBullets.Count; i++)
             {

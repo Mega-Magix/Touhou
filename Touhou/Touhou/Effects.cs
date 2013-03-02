@@ -31,7 +31,7 @@ namespace Touhou.Effects
         public Rectangle rectangle;
 
         public Dictionary<string, List<int>> _animationSets = new Dictionary<string,List<int>>();
-        string _animationSet = "_default";
+        string _animationSet = "_null";
         public string nextAnimationSet = "_default";
         public List<int> animationSetValue;
 
