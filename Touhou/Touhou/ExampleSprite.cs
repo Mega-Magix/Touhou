@@ -301,9 +301,9 @@ namespace Touhou.ExampleSprite
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //Draw bg
             scrollPos += scrollSpeed * (float)dt;
-            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % gameDim.Y)), textures["sky"].Bounds,
+            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % textures["sky"].Height)), textures["sky"].Bounds,
                 Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
-            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % gameDim.Y - gameDim.Y)), textures["sky"].Bounds,
+            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % textures["sky"].Height - textures["sky"].Height)), textures["sky"].Bounds,
                 Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
             //Move and draw player bullets
             for (int i = 0; i < pBullets.Count; i++)
