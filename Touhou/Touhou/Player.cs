@@ -17,6 +17,9 @@ namespace Touhou.Battle
     {
         public Level level;
 
+        // Collision radius
+        public int radius = 5;
+
         public Effects.AnimatedTexture animation;
         Texture2D bulletTexture;
 
