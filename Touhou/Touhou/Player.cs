@@ -20,7 +20,7 @@ namespace Touhou.Battle
         // Collision radius
         public int radius = 5;
 
-        public Effects.AnimatedTexture animation;
+        public Effect.AnimatedTexture animation;
         Texture2D bulletTexture;
 
         // Setup player animation sets
@@ -50,7 +50,7 @@ namespace Touhou.Battle
             Texture2D playerAnimationTexture;
 
             playerAnimationTexture = game.Content.Load<Texture2D>("reimu");
-            animation = new Effects.AnimatedTexture(playerAnimationTexture, position, 18, 0.1);
+            animation = new Effect.AnimatedTexture(playerAnimationTexture, position, 18, 0.1);
             // Setup final animation sets
             animation.animationSets = new Dictionary<string, List<int>>()
 	        {
@@ -66,6 +66,20 @@ namespace Touhou.Battle
 
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
 
+        }
+
+        public float getCenterX()
+        {
+            return position.X + animation.width / 2;
+        }
+        public float getCenterY()
+        {
+            return position.Y + animation.height / 2;
+        }
+
+        public void Kill()
+        {
+            
         }
 
         public void Update(float dt, KeyboardState keystate)
@@ -139,8 +153,8 @@ namespace Touhou.Battle
                     fireWait = fireDelay;
                     // Fire a new player bullet
                     Vector2 bulletPosition;
-                    bulletPosition.X = position.X + (animation.width - bulletTexture.Width) / 2;
-                    bulletPosition.Y = position.Y + (animation.height - bulletTexture.Height) / 2;
+                    bulletPosition.X = getCenterX();
+                    bulletPosition.Y = getCenterY();
                     Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
                     level.addBullet(bullet, BulletSet.Player);
                     soundShoot.Play();

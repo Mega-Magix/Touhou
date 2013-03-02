@@ -19,7 +19,7 @@ namespace Touhou.Battle
         public Vector2 position = Vector2.Zero;
         public Vector2 velocity = Vector2.Zero;
 
-        public Effects.AnimatedTexture animation;
+        public Effect.AnimatedTexture animation;
 
         public Game game;
         public Level level;
@@ -41,7 +41,7 @@ namespace Touhou.Battle
             velocity.X = speedX;
             velocity.Y = speedY;
 
-            animation = new Effects.AnimatedTexture(animationTexture, position, 4, 0.2);
+            animation = new Effect.AnimatedTexture(animationTexture, position, 4, 0.2);
         }
 
         public float getCenterX()
@@ -53,8 +53,10 @@ namespace Touhou.Battle
             return position.Y + animation.height / 2;
         }
 
-        public void Damage()
+        public void Damage(Bullet bullet)
         {
+            Effect.Explosion explosion = new Effect.Explosion(game, "explodeblue", getCenterX(), getCenterY(), 2.0f, 0.5f);
+            level.addExplosion(explosion);
             Destroy();
         }
         public void Destroy()

@@ -17,6 +17,7 @@ namespace Touhou.Battle
 
         Player player;
         List<Enemy> enemies = new List<Enemy>();
+        List<Effect.Explosion> explosions = new List<Effect.Explosion>();
 
         float newEnemyWait = 0;
         float newEnemyDelay = 1; 
@@ -52,8 +53,6 @@ namespace Touhou.Battle
 
             width = game.GraphicsDevice.Viewport.Width;
             height = game.GraphicsDevice.Viewport.Height;
-
-            addEnemy(new Enemy(this.game, this, 100, 14, 0, 50));
         }
         
         public void addBullet(Bullet newBullet, BulletSet bulletSet)
@@ -67,6 +66,10 @@ namespace Touhou.Battle
         {
             enemies.Add(enemy);
         }
+        public void addExplosion(Effect.Explosion explosion)
+        {
+            explosions.Add(explosion);
+        }
 
         public void Update(GameTime gameTime, KeyboardState keystate)
         {
@@ -74,12 +77,40 @@ namespace Touhou.Battle
 
             player.Update(dt, keystate);
 
+            // Update each explosion on the screen
+            Effect.Explosion explosion;
+            for (int i = 0; i < explosions.Count; i++)
+            {
+                explosion = explosions[i];
+                explosion.Update(dt);
+
+                if (explosion.destroyed == true)
+                {
+                    explosions.RemoveAt(i);
+                    i--;
+                }
+            }
+
             // Update each enemy on the screen
             Enemy enemy;
             for (int i = 0; i < enemies.Count; i++)
             {
                 enemy = enemies[i];
                 enemy.Update(dt);
+
+                // Check enemy collisions with the player
+
+                // Find the distance of the enemy from the player
+                double distance = Math.Sqrt(
+                    (player.getCenterX() - enemy.getCenterX()) * (player.getCenterX() - enemy.getCenterX()) +
+                    (player.getCenterY() - enemy.getCenterY()) * (player.getCenterY() - enemy.getCenterY())
+                    );
+
+                if (distance <= enemy.radius + player.radius)
+                {
+                    player.Kill();
+                }
+
                 if (enemy.destroyed == true)
                 {
                     enemies.RemoveAt(i);
@@ -105,27 +136,28 @@ namespace Touhou.Battle
                 else
                 {
                     // Check any bullets for collision
-                    if (bullet.radius == 1)
+                    for (int ii = 0; ii < enemies.Count; ii++)
                     {
-                        // If radius is one, do a simple point to circle collision
-                        for (int ii = 0; ii < enemies.Count; ii++)
+                        enemy = enemies[ii];
+                        // Find the distance from the bullet point to the center of the enemy circle
+                        double distance = Math.Sqrt(
+                            (bullet.position.X - enemy.getCenterX()) * (bullet.position.X - enemy.getCenterX()) +
+                            (bullet.position.Y - enemy.getCenterY()) * (bullet.position.Y - enemy.getCenterY())
+                            );
+
+                        if (distance <= enemy.radius + bullet.radius)
                         {
-                            enemy = enemies[ii];
-                            // Find the distance from the bullet point to the center of the enemy circle
-                            double distance = Math.Sqrt(
-                                (bullet.position.X - enemy.getCenterX()) * (bullet.position.X - enemy.getCenterX()) +
-                                (bullet.position.Y - enemy.getCenterY()) * (bullet.position.Y - enemy.getCenterY())
-                                );
-                            if (distance <= enemy.radius)
+                            if (i >= 0)
                             {
                                 playerBullets.RemoveAt(i);
                                 i--;
-                                enemy.Damage();
+                                enemy.Damage(bullet);
                             }
                         }
                     }
                 }
             }
+
             for (int i = 0; i < enemyBullets.Count; i++)
             {
                 bullet = enemyBullets[i];
@@ -139,14 +171,28 @@ namespace Touhou.Battle
                     i--;
                 }
 
-                // Check any bullets for collision
+                else
+                {
+                    // Check each enemy bullet for collision with the game player
+                    double distance = Math.Sqrt(
+                        (bullet.position.X - player.getCenterX()) * (bullet.position.X - player.getCenterX()) +
+                        (bullet.position.Y - player.getCenterY()) * (bullet.position.Y - player.getCenterY())
+                        );
+
+                    if (distance <= player.radius + bullet.radius)
+                    {
+                        enemyBullets.RemoveAt(i);
+                        i--;
+                        player.Kill();
+                    }
+                }
             }
 
             newEnemyWait -= dt;
             if (newEnemyWait <= newEnemyDelay)
             {
                 newEnemyWait += newEnemyDelay;
-                addEnemy(new Enemy(this.game, this, 150, 14, 0, 50));
+                addEnemy(new Enemy(this.game, this, 150, 24, 0, 50));
             }
         }
 
@@ -159,6 +205,13 @@ namespace Touhou.Battle
 
             player.animation.Draw(spriteBatch);
 
+            //Draw each explosion on the screen
+            Effect.Explosion explosion;
+            for (int i = 0; i < explosions.Count; i++)
+            {
+                explosion = explosions[i];
+                explosion.Draw(spriteBatch);
+            }
             //Draw each enemy on the screen
             Enemy enemy;
             for (int i = 0; i < enemies.Count; i++)

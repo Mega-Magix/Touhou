@@ -9,8 +9,70 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
-namespace Touhou.Effects
+namespace Touhou.Battle.Effect
 {
+
+    public class Explosion
+    {
+        public Vector2 position;
+
+        Texture2D texture;
+
+        // Total expansion scale over lifetime
+        public float expansion;
+
+        // Total seconds to animate the explosion over
+        public float lifetime;
+
+        // Will add delta time to this every update call
+        // total amount of seconds that this explosion has been on the screen
+        public float time;
+
+        private float alpha;
+        private float scale;
+        private float t;
+
+        Vector2 textureVector;
+        Rectangle textureRectangle;
+
+        public Boolean destroyed = false;
+
+        public Explosion(Game game, String texture, float x, float y, float expansion, float lifetime)
+        {
+            this.texture = game.Content.Load<Texture2D>(texture);
+
+            textureVector = new Vector2(this.texture.Width, this.texture.Height);
+            textureRectangle = this.texture.Bounds;
+
+            position.X = x;
+            position.Y = y;
+
+            this.expansion = expansion;
+            this.lifetime = lifetime;
+        }
+
+        public void Destroy()
+        {
+            destroyed = true;
+        }
+
+        public void Update(float dt)
+        {
+            time += dt;
+            t = time / lifetime;
+            if (t > 1.0)
+                Destroy();
+        }
+
+        public void Draw(SpriteBatch spriteBatch)
+        {
+            alpha = 1.0f - t;
+            scale = expansion * t;
+
+            spriteBatch.Draw(texture, position - textureVector / 2 * scale, textureRectangle, Color.White * alpha,
+                0.0f, Vector2.Zero, scale, SpriteEffects.None, 0.0f);
+        }
+    }
 
     public class AnimatedTexture
     {

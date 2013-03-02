@@ -20,7 +20,7 @@ namespace Touhou.Battle
         float angle;
         Vector2 velocity;
 
-        public int radius = 1;
+        public int radius = 0;
 
         // Create a new bullet with an angle and a speed.
         public Bullet(Texture2D image, Vector2 position, float angle, float speed)
