@@ -168,6 +168,7 @@ namespace Touhou.ExampleSprite
         
 
         static double dt;
+        static double time = 0.0;
         static SpriteEffects playerEffect = SpriteEffects.None;
 
 
@@ -181,6 +182,7 @@ namespace Touhou.ExampleSprite
 
             //Get elapsed time
             dt = gameTime.ElapsedGameTime.TotalSeconds;
+            time += dt;
             //Get framerate
             fps = (int)(1.0 / dt) + 1;
             //Reset shoot managers
@@ -203,7 +205,7 @@ namespace Touhou.ExampleSprite
             }
             //Move and draw sprites
             this.Draw(gameTime);
-            //Move and draw boss
+            //Move boss
             if (boss != null && Boss.isEntering) boss.enter();
             if (boss != null) boss.update();
 
@@ -284,7 +286,10 @@ namespace Touhou.ExampleSprite
                 return bulletTextures[t][c];
             }
         }
-        
+
+        static float scrollSpeed = 30.0f;
+        static float scrollPos = 0.0f;
+
         protected override void Draw(GameTime gameTime)
         {
             //Window data
@@ -295,7 +300,10 @@ namespace Touhou.ExampleSprite
             // Begin drawing sprites
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //Draw bg
-            spriteBatch.Draw(textures["sky"], Vector2.Zero, textures["sky"].Bounds,
+            scrollPos += scrollSpeed * (float)dt;
+            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % gameDim.Y)), textures["sky"].Bounds,
+                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % gameDim.Y - gameDim.Y)), textures["sky"].Bounds,
                 Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
             //Move and draw player bullets
             for (int i = 0; i < pBullets.Count; i++)
@@ -1080,6 +1088,7 @@ namespace Touhou.ExampleSprite
                     string[] command = conv[line].Substring(1).Split(':');
                     if (command[0] == "Music") MediaPlayer.Play(songs[command[1]]);
                     if (command[0] == "Enter") Boss.isEntering = true;
+                    if (command[0] == "Speed") scrollSpeed = Convert.ToInt32(command[1]);
                     Console.WriteLine(conv[line].Substring(1)); line++; this.showConv(); return true;
                 }
                 else
