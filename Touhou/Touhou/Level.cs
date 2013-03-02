@@ -19,7 +19,7 @@ namespace Touhou.Battle
         List<Enemy> enemies = new List<Enemy>();
         List<Effect.Explosion> explosions = new List<Effect.Explosion>();
 
-        float newEnemyWait = 0;
+        float newEnemyWait = 1;
         float newEnemyDelay = 1; 
 
         Song music;
@@ -147,12 +147,15 @@ namespace Touhou.Battle
 
                         if (distance <= enemy.radius + bullet.radius)
                         {
-                            if (i >= 0)
+                            enemy.Damage(bullet);
+                            playerBullets.RemoveAt(i);
+                            i--;
+                            if (enemy.destroyed == true)
                             {
-                                playerBullets.RemoveAt(i);
-                                i--;
-                                enemy.Damage(bullet);
+                                enemies.RemoveAt(ii);
+                                ii--;
                             }
+                            break;
                         }
                     }
                 }
