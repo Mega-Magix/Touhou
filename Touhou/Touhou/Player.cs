@@ -82,6 +82,17 @@ namespace Touhou.Battle
             
         }
 
+        public void Shoot()
+        {
+            // Fire a new player bullet
+            Vector2 bulletPosition;
+            bulletPosition.X = getCenterX();
+            bulletPosition.Y = getCenterY();
+            Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
+            level.addBullet(bullet, BulletSet.Player);
+            soundShoot.Play();
+        }
+
         public void Update(float dt, KeyboardState keystate)
         {
 
@@ -151,13 +162,7 @@ namespace Touhou.Battle
                 if (fireWait <= 0.0f)
                 {
                     fireWait = fireDelay;
-                    // Fire a new player bullet
-                    Vector2 bulletPosition;
-                    bulletPosition.X = getCenterX();
-                    bulletPosition.Y = getCenterY();
-                    Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
-                    level.addBullet(bullet, BulletSet.Player);
-                    soundShoot.Play();
+                    Shoot();
                 }
             }
 

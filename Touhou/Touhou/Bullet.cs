@@ -26,7 +26,7 @@ namespace Touhou.Battle
         public Bullet(Texture2D image, Vector2 position, float angle, float speed)
         {
             this.image = image;
-            this.position = position;
+            this.position = position - new Vector2(image.Width, image.Height)/2;
             this.speed = speed;
             this.Angle = angle;
         }
