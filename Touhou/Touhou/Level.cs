@@ -18,6 +18,9 @@ namespace Touhou.Battle
         Player player;
         List<Enemy> enemies = new List<Enemy>();
 
+        float newEnemyWait = 0;
+        float newEnemyDelay = 1; 
+
         Song music;
 
         public int width;
@@ -50,7 +53,7 @@ namespace Touhou.Battle
             width = game.GraphicsDevice.Viewport.Width;
             height = game.GraphicsDevice.Viewport.Height;
 
-            addEnemy(new Enemy(this.game, this, 100, 0, 50));
+            addEnemy(new Enemy(this.game, this, 100, 14, 0, 50));
         }
         
         public void addBullet(Bullet newBullet, BulletSet bulletSet)
@@ -85,9 +88,10 @@ namespace Touhou.Battle
             }
 
             //Update each bullet on the screen.
+            Bullet bullet;
             for (int i = 0; i < playerBullets.Count; i++)
             {
-                Bullet bullet = playerBullets[i];
+                bullet = playerBullets[i];
                 bullet.Update(dt);
 
                 // Remove any off-screen bullets
@@ -97,10 +101,34 @@ namespace Touhou.Battle
                     playerBullets.RemoveAt(i);
                     i--;
                 }
+
+                else
+                {
+                    // Check any bullets for collision
+                    if (bullet.radius == 1)
+                    {
+                        // If radius is one, do a simple point to circle collision
+                        for (int ii = 0; ii < enemies.Count; ii++)
+                        {
+                            enemy = enemies[ii];
+                            // Find the distance from the bullet point to the center of the enemy circle
+                            double distance = Math.Sqrt(
+                                (bullet.position.X - enemy.getCenterX()) * (bullet.position.X - enemy.getCenterX()) +
+                                (bullet.position.Y - enemy.getCenterY()) * (bullet.position.Y - enemy.getCenterY())
+                                );
+                            if (distance <= enemy.radius)
+                            {
+                                playerBullets.RemoveAt(i);
+                                i--;
+                                enemy.Damage();
+                            }
+                        }
+                    }
+                }
             }
             for (int i = 0; i < enemyBullets.Count; i++)
             {
-                Bullet bullet = enemyBullets[i];
+                bullet = enemyBullets[i];
                 bullet.Update(dt);
 
                 // Remove any off-screen bullets
@@ -110,6 +138,15 @@ namespace Touhou.Battle
                     enemyBullets.RemoveAt(i);
                     i--;
                 }
+
+                // Check any bullets for collision
+            }
+
+            newEnemyWait -= dt;
+            if (newEnemyWait <= newEnemyDelay)
+            {
+                newEnemyWait += newEnemyDelay;
+                addEnemy(new Enemy(this.game, this, 150, 14, 0, 50));
             }
         }
 

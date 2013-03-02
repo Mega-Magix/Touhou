@@ -13,8 +13,11 @@ namespace Touhou.Battle
 {
     public class Enemy
     {
-        Vector2 position = Vector2.Zero;
-        Vector2 velocity = Vector2.Zero;
+        // Collision radius
+        public int radius = 0;
+
+        public Vector2 position = Vector2.Zero;
+        public Vector2 velocity = Vector2.Zero;
 
         public Effects.AnimatedTexture animation;
 
@@ -23,10 +26,12 @@ namespace Touhou.Battle
 
         public Boolean destroyed = false;
 
-        public Enemy(Game game, Level level, int x, int speedX, int speedY)
+        public Enemy(Game game, Level level, int x, int radius, int speedX, int speedY)
         {
             this.game = game;
             this.level = level;
+
+            this.radius = radius;
 
             Texture2D animationTexture;
             animationTexture = game.Content.Load<Texture2D>("enemy1fly");
@@ -39,6 +44,19 @@ namespace Touhou.Battle
             animation = new Effects.AnimatedTexture(animationTexture, position, 4, 0.2);
         }
 
+        public float getCenterX()
+        {
+            return position.X + animation.width / 2;
+        }
+        public float getCenterY()
+        {
+            return position.Y + animation.height / 2;
+        }
+
+        public void Damage()
+        {
+            Destroy();
+        }
         public void Destroy()
         {
             this.destroyed = true;
