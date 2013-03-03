@@ -13,9 +13,10 @@ namespace Touhou
 
             Console.WriteLine("Please specify which main project file to run: ");
             Console.WriteLine("-------------------------------------------------");
-            Console.WriteLine(" 0 - Touhou.cs");
+            Console.WriteLine(" 0 - Touhou Windowed");
             Console.WriteLine(" 1 - ExampleSprite.cs");
             Console.WriteLine(" 2 - (IronPython test)");
+            Console.WriteLine(" 3 - Touhou Fullscreen");
             Console.WriteLine("-------------------------------------------------");
             Console.Write(" :: ");
             runType = Console.ReadLine();
@@ -34,6 +35,14 @@ namespace Touhou
                 String moduleName;
                 moduleName = Console.ReadLine();
                 ironPython.RunFile(moduleName);
+            }
+            if (runType == "3")
+            {
+                Console.Write("Enter screen width: ");
+                int width = int.Parse(Console.ReadLine());
+                Console.Write("Enter screen height: ");
+                int height = int.Parse(Console.ReadLine());
+                using (Touhou game = new Touhou(true, (double)width / (double)height)) game.Run();
             }
         }
     }
