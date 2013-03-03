@@ -7,10 +7,24 @@ html {
     background-size: cover;
 }
 
+body {
+    margin-left: 0px;
+    margin-top: 8px;
+}
+
 .headLinks {
     padding: 12px;
     background-color: black;
     width: 100%;
+    margin-left: 0px;
+    margin-top: 0px;
+}
+
+.selectedLink {
+    font-size: 16px;
+    text-decoration: none;
+    letter-spacing: 5px;
+    font-family: Georgia, "Times New Roman", Times, serif;
 }
 
 .fadingLink {
