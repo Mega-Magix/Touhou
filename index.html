@@ -7,18 +7,30 @@
 html { 
    width:100%; 
    height:100%; 
-   background:url(logo.png) center center no-repeat;
+   background:url(home_header_background.jpg) top center no-repeat;
    background-color:#000000;
+   background-size: cover;
 }
 
 .titleimg {
-   position: absolute;
-   top: 50%;
-   left: 50%;
-   width: 700px;
-   height: 453px;
-   margin-top: -227px; /* Half the height */
-   margin-left: -350px; /* Half the width */
+	display: block;
+   margin-left: auto;
+   margin-right: auto;
+   width: 80%;
+}
+
+.block {
+	margin-left: 18%;
+	margin-right: 18%;
+	background-color: black;
+	border-color: grey;
+	border-style: solid;
+	border-width: thin;
+	color: white;
+	font-size: normal;
+	text-decoration: none;
+	font-family: Georgia, "Times New Roman", Times, serif;
+	padding: 10px;
 }
 
 .centeredImage
@@ -30,9 +42,9 @@ html {
 	position: absolute;
     }
 	
-a {
+.fadingLink {
 	color:grey;
-	font-size: 14px;
+	font-size: 16px;
 	text-decoration: none;
 	letter-spacing: 5px;
 	font-family: Georgia, "Times New Roman", Times, serif;
@@ -47,9 +59,9 @@ a {
 	/* ...and now for the proper property */
   transition:.5s;
 }
-a:hover {
+.fadingLink:hover {
 	color:white;
-	font-size: 14px;
+	font-size: 16px;
 	text-decoration: none;
 	font-family: Georgia, "Times New Roman", Times, serif;
 }
@@ -57,15 +69,15 @@ a:hover {
 </head>
 
 <body>
-<img src="home_header_background.jpg" width=99% style="position: absolute" />
-<img class="titleimg" src="Title.png" width=45% />
 
-<div style="position: absolute; padding: 12px; background-color: black; width: 100%">
-<a style="margin-left: 20%; margin-right: 30px" href="index.html">Home</a>
-<a style="margin-right: 30px" href="index.html">Downloads</a>
-<a style="margin-right: 30px" href="index.html">About</a>
-<a style="margin-right: 30px"href="https://github.com/Team-Oracle/Touhou/wiki">Wiki</a>
+<div style="padding: 12px; background-color: black; width: 100%;">
+<a class="fadingLink" style="margin-left: 20%; margin-right: 30px" href="index.html">Home</a>"
+<a class="fadingLink" style="margin-right: 30px" href="index.html">Downloads</a>
+<a class="fadingLink" style="margin-right: 30px" href="index.html">About</a>
+<a class="fadingLink" style="margin-right: 30px"href="https://github.com/Team-Oracle/Touhou/wiki">Wiki</a>
 </div>
+
+<img class="titleimg" src="Title.png" />
 
 </body>
 </html>
