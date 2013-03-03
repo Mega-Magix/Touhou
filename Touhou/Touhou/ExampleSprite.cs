@@ -102,6 +102,8 @@ namespace Touhou.ExampleSprite
         static Script enemyScript1;
         static Loop[] enemyScript2Loops = new Loop[2];
         static Script enemyScript2;
+        static Loop[,] enemyScript3Loops = new Loop[2, 2];
+        static Script[] enemyScript3;
 
         protected override void LoadContent()
         {
@@ -151,8 +153,13 @@ namespace Touhou.ExampleSprite
             enemyScript2Loops[0] = new Loop(10, 0.5, 1, 0.0);
             enemyScript2Loops[1] = new Loop(5, 0.0, 2, 0.0);
             enemyScript2 = new Script(getColoredTexture("B2", Color.Blue), Color.Blue, 0.0f, 100.0f, enemyScript2Loops);
-            bossScript1Loops[0] = new Loop(1000, 0.5, 3, 0.0);
-            bossScript1Loops[1] = new Loop(20, 0.0, 4, 0.0);
+            enemyScript3Loops[0,0] = new Loop(10, 1.0, 3, 0.0);
+            enemyScript3Loops[0,1] = new Loop(20, 0.0, 4, 0.0);
+            enemyScript3Loops[1,0] = new Loop(100, 0.02, 5, 0.0);
+            enemyScript3 = new Script[]{new Script(getColoredTexture("B3", Color.Green), Color.Green, 0.0f, 150.0f, new Loop[] {enemyScript3Loops[0,0], enemyScript3Loops[0,1]}),
+                                        new Script(getColoredTexture("B4",Color.Yellow), Color.Yellow, 0.0f, 100.0f, new Loop[] {enemyScript3Loops[1,0]})};
+            bossScript1Loops[0] = new Loop(1000, 0.5, 6, 0.0);
+            bossScript1Loops[1] = new Loop(20, 0.0, 7, 0.0);
             bossScript1 = new Script(getColoredTexture("B2", Color.Purple), Color.Purple, 0.0f, 100.0f, bossScript1Loops);
             //Starting Reimu texture
             Player.img = reimuTextures[0];
@@ -234,6 +241,7 @@ namespace Touhou.ExampleSprite
         double spawnDelay1 = 0.0;
         double spawnRate1 = 1.0;
         double spawnDelay2 = 10.0;
+        double spawnDelay3 = 3.0;
         double waveTime = 15.0;
         int waves = 0;
 
@@ -241,6 +249,7 @@ namespace Touhou.ExampleSprite
         {
             spawnDelay1 -= dt;
             spawnDelay2 -= dt;
+            if (waves == 9) spawnDelay3 -= dt;
             waveTime -= dt;
             if (spawnDelay1 <= 0 && waveTime >= 5)
             {
@@ -257,6 +266,12 @@ namespace Touhou.ExampleSprite
                     enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
                        new Vector2(n + 100 * i, -30), 180.0f, 50.0f, Color.Blue, 6, new Script(enemyScript2)));
                 }
+            }
+            if (spawnDelay3 <= 0)
+            {
+                spawnDelay3 += 1000000.0;
+                enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
+                       new Vector2(gameDim.X / 2, 100), 180.0f, 0.0f, Color.Blue, 100, new Script[]{enemyScript3[0], enemyScript3[1]}));
             }
             if (waveTime <= 0)
             {
@@ -803,20 +818,32 @@ namespace Touhou.ExampleSprite
         {
             public int health;
             public SpriteEffects effect = SpriteEffects.None;
-            public Script script;
+            public Script[] scripts;
             public float sDelay = 0.0f;
             public float sRate = 1.0f;
             //Constructor given angular direction
             public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr)
                 : base(t, p, a, s, c, drawType.Animated)
             {
-                health = h; script = scr;
+                health = h; scripts = new Script[1]; scripts[0] = scr;
             }
             //Constructor given vector direction
             public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr)
                 : base(t, p, d, c, drawType.Animated)
             {
-                health = h; script = scr;
+                health = h; scripts = new Script[1]; scripts[0] = scr;
+            }
+            //Constructor given angular direction
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script[] scr)
+                : base(t, p, a, s, c, drawType.Animated)
+            {
+                health = h; scripts = scr;
+            }
+            //Constructor given vector direction
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script[] scr)
+                : base(t, p, d, c, drawType.Animated)
+            {
+                health = h; scripts = scr;
             }
             //Update method to move the enemy and check for collisions
             override public bool update()
@@ -824,7 +851,11 @@ namespace Touhou.ExampleSprite
                 //Move the sprite
                 pos += dir * speed * (float)dt;
                 //Have the enemy shoot
-                if (conversation == null) script.run(this);
+                if (conversation == null)
+                {
+                    for (int i = 0; i < scripts.Length; i++)
+                        scripts[i].run(this);
+                }
                 //Return false if sprite off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
@@ -1225,8 +1256,18 @@ namespace Touhou.ExampleSprite
                     case 2:
                         script.angle += 30.0f;
                         break;
-                    case 3: break;
+                    case 3:
+                        script.angle = (float)random.NextDouble() * 360.0f;
+                        break;
                     case 4:
+                        script.angle += 18.0f;
+                        break;
+                    case 5:
+                        script.angle = (float)random.NextDouble() * 360.0f;
+                        script.speed = (float)random.Next(50,100);
+                        break;
+                    case 6: break;
+                    case 7:
                         script.angle = (float)random.NextDouble() * 360.0f;
                         break;
                     
