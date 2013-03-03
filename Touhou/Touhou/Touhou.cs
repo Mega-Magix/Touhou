@@ -25,8 +25,6 @@ namespace Touhou
 
         RenderTarget2D target;
         SpriteBatch targetBatch;
-        Texture2D blackRectangle;
-        SpriteBatch blackBatch;
         Rectangle targetRectangle;
 
         Rectangle screenRectangle;
@@ -135,10 +133,6 @@ namespace Touhou
             target = new RenderTarget2D(GraphicsDevice, gameWidth, gameHeight);
             targetBatch = new SpriteBatch(GraphicsDevice);
             level = new Battle.Level(this);
-
-            blackRectangle = new Texture2D(GraphicsDevice, 1, 1);
-            blackBatch = new SpriteBatch(GraphicsDevice);
-            blackRectangle.SetData(new Color[] { Color.Black });
         }
 
         protected override void Update(GameTime gameTime)
@@ -156,10 +150,6 @@ namespace Touhou
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.SetRenderTarget(target);
-
-            blackBatch.Begin();
-            blackBatch.Draw(blackRectangle, screenRectangle, Color.Black);
-            blackBatch.End();
 
             level.Draw();
 
