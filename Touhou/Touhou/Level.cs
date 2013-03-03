@@ -32,6 +32,10 @@ namespace Touhou.Battle
         List<Bullet> playerBullets = new List<Bullet>();
         List<Bullet> enemyBullets = new List<Bullet>();
 
+        public Texture2D backgroundImage;
+        public float backgroundImagePosition = 0.0f;
+        public float backgroundImageSpeed = 30.0f;
+
         // Delta time, the amount of time passed between game frames.
         float dt;
 
@@ -49,6 +53,8 @@ namespace Touhou.Battle
 
             // Load other game media
             music = game.Content.Load<Song>("A Soul As Red As Ground Cherry");
+
+            backgroundImage = game.Content.Load<Texture2D>("Sky");
 
             // Start playing level music
             // MediaPlayer.Play(music);
@@ -209,7 +215,14 @@ namespace Touhou.Battle
             // Draw the player sprite
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
 
-            //spriteBatch.Draw(playerTexture, playerPosition, Color.White);
+            // Draw the background image
+            backgroundImagePosition += backgroundImageSpeed * (float)dt;
+            spriteBatch.Draw(backgroundImage, new Vector2(
+                0.0f, (float)(backgroundImagePosition % backgroundImage.Height)), backgroundImage.Bounds,
+                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+            spriteBatch.Draw(backgroundImage, new Vector2(
+                0.0f, (float)(backgroundImagePosition % backgroundImage.Height - backgroundImage.Height)), backgroundImage.Bounds,
+                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
 
             player.animation.Draw(spriteBatch);
 
