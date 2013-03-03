@@ -21,12 +21,24 @@ namespace Touhou
 
         double primaryAspectRatio;
 
+        double scalingRatio;
+
+        RenderTarget2D target;
+        SpriteBatch targetBatch;
+        Rectangle targetRectangle;
+
+        public int viewportWidth;
+        public int viewportHeight;
+
+        public int gameWidth = 640;
+        public int gameHeight = 480;
+
         public Touhou()
         {
 
             DisplayMode displayMode = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
 
-            primaryAspectRatio = (double)displayMode.Width / (double)displayMode.Height;
+            primaryAspectRatio = 16.0d / 9.0d;
 
             this.IsFixedTimeStep = false;
 
@@ -60,7 +72,7 @@ namespace Touhou
             int minimalIndex = -1;
             for (int i = 0; i < optimalHeights.Count; i++)
             {
-                int diff = Math.Abs(optimalHeights[i] - 720);
+                int diff = Math.Abs(optimalHeights[i] - 480);
                 if (minimalValue < 0)
                 {
                     minimalValue = diff;
@@ -82,12 +94,25 @@ namespace Touhou
             graphics.PreferredBackBufferHeight = heightValue;
             graphics.IsFullScreen = true;
             graphics.SynchronizeWithVerticalRetrace = false;
+
             graphics.ApplyChanges();
 
-            GraphicsDevice.Viewport = new Viewport(
-                (GraphicsDevice.Viewport.Width - 640) / 2,
-                (GraphicsDevice.Viewport.Height- 720) / 2,
-                640, 720);
+            // Our new height will MATCH the screen resolution now
+            // Our width will be at that screen resolution height adjusted to the aspect ratio
+            viewportHeight = heightValue;
+            viewportWidth = (int)((4.0d / 3.0d)*(double)heightValue);
+            int screenWidth = graphics.PreferredBackBufferWidth;
+            int screenHeight = graphics.PreferredBackBufferHeight;
+            int viewportX = (screenWidth - viewportWidth) / 2;
+            int viewportY = (screenHeight - viewportHeight) / 2;
+
+            graphics.ApplyChanges();
+
+            scalingRatio = (double)heightValue / (double)gameHeight;
+
+            target = new RenderTarget2D(GraphicsDevice, gameWidth, gameHeight);
+            targetBatch = new SpriteBatch(GraphicsDevice);
+            targetRectangle = new Rectangle(viewportX, viewportY, viewportWidth, viewportHeight);
 
             level = new Battle.Level(this);
         }
@@ -106,9 +131,14 @@ namespace Touhou
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.SetRenderTarget(target);
 
             level.Draw();
+
+            GraphicsDevice.SetRenderTarget(null);
+            targetBatch.Begin();
+            targetBatch.Draw(target, targetRectangle, Color.White);
+            targetBatch.End();
 
             base.Draw(gameTime);
         }

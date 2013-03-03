@@ -37,7 +37,7 @@ namespace Touhou.Battle
 
         SpriteBatch spriteBatch;
 
-        public Level(Game game)
+        public Level(Touhou game)
         {
             this.game = game;
 
@@ -53,8 +53,8 @@ namespace Touhou.Battle
             // Start playing level music
             // MediaPlayer.Play(music);
 
-            width = game.GraphicsDevice.Viewport.Width;
-            height = game.GraphicsDevice.Viewport.Height;
+            width = game.gameWidth;
+            height = game.gameHeight;
         }
         
         public void addBullet(Bullet newBullet, BulletSet bulletSet)
