@@ -238,13 +238,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="damage.wav">
-      <Name>damage</Name>
-      <Importer>WavImporter</Importer>
-      <Processor>SoundEffectProcessor</Processor>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Fall of Fall.MP3">
       <Name>Fall of Fall</Name>
       <Importer>Mp3Importer</Importer>
@@ -402,6 +395,13 @@
       <Name>B7</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="damage.wav">
+      <Name>damage</Name>
+      <Importer>WavImporter</Importer>
+      <Processor>SoundEffectProcessor</Processor>
     </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\$(XnaFrameworkVersion)\Microsoft.Xna.GameStudio.ContentPipeline.targets" />

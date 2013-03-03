@@ -155,7 +155,7 @@ namespace Touhou.ExampleSprite
             enemyScript2 = new Script(getColoredTexture("B2", Color.Blue), Color.Blue, 0.0f, 100.0f, enemyScript2Loops);
             enemyScript3Loops[0,0] = new Loop(10, 1.0, 3, 0.0);
             enemyScript3Loops[0,1] = new Loop(20, 0.0, 4, 0.0);
-            enemyScript3Loops[1,0] = new Loop(100, 0.02, 5, 0.0);
+            enemyScript3Loops[1,0] = new Loop(500, 0.02, 5, 0.0);
             enemyScript3 = new Script[]{new Script(getColoredTexture("B3", Color.Green), Color.Green, 0.0f, 150.0f, new Loop[] {enemyScript3Loops[0,0], enemyScript3Loops[0,1]}),
                                         new Script(getColoredTexture("B4",Color.Yellow), Color.Yellow, 0.0f, 100.0f, new Loop[] {enemyScript3Loops[1,0]})};
             bossScript1Loops[0] = new Loop(1000, 0.5, 6, 0.0);
