@@ -24,6 +24,8 @@ namespace Touhou.Battle
 
         Song music;
 
+        List<SoundManager> soundManagers = new List<SoundManager>();
+
         public int width;
         public int height;
 
@@ -73,6 +75,9 @@ namespace Touhou.Battle
 
         public void Update(GameTime gameTime, KeyboardState keystate)
         {
+            for (int i = 0; i < soundManagers.Count; i++)
+                soundManagers[i].isPlaying = false;
+
             dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
             player.Update(dt, keystate);
@@ -195,7 +200,7 @@ namespace Touhou.Battle
             if (newEnemyWait <= newEnemyDelay)
             {
                 newEnemyWait += newEnemyDelay;
-                addEnemy(new Enemy(this.game, this, 150, 24, 0, 50));
+                addEnemy(new Enemy(this.game, this, 150, 24, 0, 50, 3));
             }
         }
 

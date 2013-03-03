@@ -26,12 +26,16 @@ namespace Touhou.Battle
 
         public Boolean destroyed = false;
 
-        public Enemy(Game game, Level level, int x, int radius, int speedX, int speedY)
+        public int health;
+
+        public Enemy(Game game, Level level, int x, int radius, int speedX, int speedY, int health)
         {
             this.game = game;
             this.level = level;
 
             this.radius = radius;
+
+            this.health = health;
 
             Texture2D animationTexture;
             animationTexture = game.Content.Load<Texture2D>("enemy1fly");
@@ -55,9 +59,13 @@ namespace Touhou.Battle
 
         public void Damage(Bullet bullet)
         {
-            Effect.Explosion explosion = new Effect.Explosion(game, "explodeblue", getCenterX(), getCenterY(), 2.0f, 0.5f);
-            level.addExplosion(explosion);
-            Destroy();
+            health -= bullet.damage;
+            if (health <= 0)
+            {
+                Effect.Explosion explosion = new Effect.Explosion(game, "explodeblue", getCenterX(), getCenterY(), 2.0f, 0.5f);
+                level.addExplosion(explosion);
+                Destroy();
+            }
         }
         public void Destroy()
         {
