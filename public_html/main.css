@@ -1,0 +1,34 @@
+
+html {
+    width:100%;
+    height:100%;
+    background:url(images/home_header_background.jpg) top center no-repeat;
+    background-color: black;
+    background-size: cover;
+}
+
+.headLinks {
+    padding: 12px;
+    background-color: black;
+    width: 100%;
+}
+
+.fadingLink {
+    color:grey;
+    font-size: 16px;
+    text-decoration: none;
+    letter-spacing: 5px;
+    font-family: Georgia, "Times New Roman", Times, serif;
+    
+    -o-transition:   0.5s;
+    -ms-transition:  0.5s;
+    -moz-transition: 0.5s;
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+}
+.fadingLink:hover {
+    color:white;
+    font-size: 16px;
+    text-decoration: none;
+    font-family: Georgia, "Times New Roman", Times, serif;
+}
