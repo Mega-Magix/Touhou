@@ -38,7 +38,7 @@ namespace Touhou.ExampleSprite
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
                             "enemy2fly","enemy2moveright","enemy2right",
-                            "itempower","itempoint",
+                            "itempower","itempoint","itemhighpower",
                             "bullet1","bullet2",
                             "explode","focus","powerup","bulletexplode",
                             "foreground","sky",
@@ -88,7 +88,6 @@ namespace Touhou.ExampleSprite
         static int fps = 0;
 
         public enum PlayerStatus { Alive, Spawning, Dead }
-        public enum item { Point, Power }
         public enum drawType { Normal, Directional, Animated, AnimatedDirectional, Homing, Spinning, Laser }
 
         static int score = 0;
@@ -214,7 +213,8 @@ namespace Touhou.ExampleSprite
             else if (waves == 10)
             {
                 waves = 11;  conversation = new Conversation(conversations["conv1"]);
-                boss = new Boss(bossTexture, new Vector2(-30, 100), 0.0f, 0.0f, Color.White, 1500, bossScript1);
+                boss = new Boss(bossTexture, new Vector2(-30, 100), 0.0f, 0.0f, Color.White, 1500,
+                    new Script[] {bossScript1}, new string[1]);
                 enemies.Add(boss);
             }
             //Move and draw sprites
@@ -254,24 +254,36 @@ namespace Touhou.ExampleSprite
             if (spawnDelay1 <= 0 && waveTime >= 5)
             {
                 spawnDelay1 += spawnRate1;
+                string[] drops;
+                if (random.NextDouble() < 0.5f) drops = new string[] { "itempower" };
+                else if (random.NextDouble() < 0.01f) drops = new string[] { "itemhighpower" };
+                else drops = new string[] {"itempoint"};
                 enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[3]),
-                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Red, 3, new Script(enemyScript1)));
+                   new Vector2(random.Next(0, (int)gameDim.X), -30), 180.0f, 50.0f, Color.Red, 3, 
+                   new Script(enemyScript1), drops));
             }
             if (spawnDelay2 <= 0)
             {
                 spawnDelay2 += 10.0;
+                string[] drops = new string[10];
+                for (int i = 0; i < 10; i++) drops[i] = "itempoint";
                 int n = random.Next(50, 150);
                 for (int i = 0; i < 3; i++)
                 {
                     enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
-                       new Vector2(n + 100 * i, -30), 180.0f, 50.0f, Color.Blue, 6, new Script(enemyScript2)));
+                       new Vector2(n + 100 * i, -30), 180.0f, 50.0f, Color.Blue, 6,
+                       new Script(enemyScript2), drops));
                 }
             }
             if (spawnDelay3 <= 0)
             {
                 spawnDelay3 += 1000000.0;
+                string[] drops = new string[20];
+                for (int i = 0; i < 20; i++) drops[i] = "itempoint";
+                for (int i = 0; i < 2; i++) drops[i] = "itemhighpower";
                 enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
-                       new Vector2(gameDim.X / 2, 100), 180.0f, 0.0f, Color.Blue, 100, new Script[]{enemyScript3[0], enemyScript3[1]}));
+                       new Vector2(gameDim.X / 2, 50), 180.0f, 0.0f, Color.Blue, 100,
+                       new Script[]{enemyScript3[0], enemyScript3[1]}, drops));
             }
             if (waveTime <= 0)
             {
@@ -819,31 +831,30 @@ namespace Touhou.ExampleSprite
             public int health;
             public SpriteEffects effect = SpriteEffects.None;
             public Script[] scripts;
-            public float sDelay = 0.0f;
-            public float sRate = 1.0f;
+            public string[] drops;
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr, string[] dr)
                 : base(t, p, a, s, c, drawType.Animated)
             {
-                health = h; scripts = new Script[1]; scripts[0] = scr;
+                health = h; scripts = new Script[1]; scripts[0] = scr; drops = dr;
             }
             //Constructor given vector direction
-            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr)
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr, string[] dr)
                 : base(t, p, d, c, drawType.Animated)
             {
-                health = h; scripts = new Script[1]; scripts[0] = scr;
+                health = h; scripts = new Script[1]; scripts[0] = scr; drops = dr;
             }
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script[] scr)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script[] scr, string[] dr)
                 : base(t, p, a, s, c, drawType.Animated)
             {
-                health = h; scripts = scr;
+                health = h; scripts = scr; drops = dr;
             }
             //Constructor given vector direction
-            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script[] scr)
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script[] scr, string[] dr)
                 : base(t, p, d, c, drawType.Animated)
             {
-                health = h; scripts = scr;
+                health = h; scripts = scr; drops = dr;
             }
             //Update method to move the enemy and check for collisions
             override public bool update()
@@ -890,31 +901,29 @@ namespace Touhou.ExampleSprite
                 //Destroy enemy and create explosion and item
                 explosions.Add(new Explosion("explode",pos, 2.0f, 2.0f, 0.5f, color));
                 score += 1000;
-                if (random.Next(2) == 0)
-                    items.Add(new Item(item.Point, textures["itempoint"], pos));
-                else
-                    items.Add(new Item(item.Power, textures["itempower"], pos));
+                for (int i = 0; i < drops.Length; i++)
+                    items.Add(new Item(drops[i], pos + new Vector2(random.Next(-drops.Length * 10, drops.Length * 10),
+                        random.Next(-drops.Length * 5, drops.Length * 5))));
                 sounds["explodesound"].Play();
             }
         }
         public class Boss : Enemy
         {
-            new public Script script;
             public static bool isEntering = false;
             //Constructor given angular direction
-            public Boss(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr)
-                : base(t, p, a, s, c, h, scr)
+            public Boss(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script[] scr, string[] dr)
+                : base(t, p, a, s, c, h, scr, dr)
             {
-                imgA = t; pos = p; angle = a - 90.0f; speed = s; health = h; script = scr;
+                imgA = t; pos = p; angle = a - 90.0f; speed = s; health = h; scripts = scr;
                 radians = MathHelper.ToRadians(angle);
                 dir = new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians));
                 dim = imgA.dim; color = c;
             }
             //Constructor given vector direction
-            public Boss(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr)
-                : base(t, p, d, c, h, scr)
+            public Boss(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script[] scr, string[] dr)
+                : base(t, p, d, c, h, scr, dr)
             {
-                imgA = t; pos = p; dir = d; health = h; script = scr;
+                imgA = t; pos = p; dir = d; health = h; scripts = scr;
                 angle = MathHelper.ToDegrees((float)Math.Atan2(dir.Y, dir.X)) + 90.0f;
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
                 dim = imgA.dim; color = c;
@@ -936,7 +945,7 @@ namespace Touhou.ExampleSprite
                 sounds["defeat"].Play();
                 for (int j = 0; j < 50; j++)
                 {
-                    items.Add(new Item(item.Point, textures["itempoint"],
+                    items.Add(new Item("itempoint",
                         boss.pos + new Vector2(random.Next(-50, 50), random.Next(-50, 50))));
                 }
                 boss = null;
@@ -944,14 +953,14 @@ namespace Touhou.ExampleSprite
         }
         public class Item : Sprite
         {
-            item type;
             float speed = -1.5f;
-            public Item(item t, Texture2D i, Vector2 p)
-                : base(i, p, Vector2.Zero, Color.White, drawType.Normal)
+            string item;
+            public Item(string i, Vector2 p)
+                : base(textures[i], p, Vector2.Zero, Color.White, drawType.Normal)
             {
-                type = t;
+                img = textures[i];
+                item = i;
                 pos = p;
-                img = i;
                 dim = new Vector2(img.Width, img.Height);
             }
             override public bool update()
@@ -970,16 +979,19 @@ namespace Touhou.ExampleSprite
                 //Destroy item upon collision with player and create text
                 {
                     sounds["item"].Play();
-                    if (type == item.Power)
+                    switch(item)
                     {
+                        case "itempower":
                         scoreTexts.Add(new ScoreText(10, pos, Color.White));
-                        power++; Player.powerUp();
-                    }
-                    else
-                    {
+                        power++; Player.powerUp(); break;
+                        case "itemhighpower":
+                            scoreTexts.Add(new ScoreText(100, pos, Color.White));
+                            power += 10; Player.powerUp(); break;
+                        case "itempoint":
                         if (Player.pos.Y < 150)
                             scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
                         else scoreTexts.Add(new ScoreText(100000 - (int)Player.pos.Y * 100, pos, Color.White));
+                        break;
                     }
                     //Return false to indicate item destruction
                     return false;
