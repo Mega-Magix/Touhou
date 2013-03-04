@@ -56,7 +56,7 @@ namespace Touhou.ExampleSprite
 
 
         static Dictionary<string, Texture2D> textures = new Dictionary<string, Texture2D>();
-        static Dictionary<string, SoundEffect> sounds = new Dictionary<string, SoundEffect>();
+        static Dictionary<string, SoundManager> sounds = new Dictionary<string, SoundManager>();
         static Dictionary<string, Song> songs = new Dictionary<string,Song>();
         static Dictionary<string, string[]> conversations = new Dictionary<string, string[]>();
         static Dictionary<string, Color> convColors = new Dictionary<string,Color>();
@@ -70,8 +70,6 @@ namespace Touhou.ExampleSprite
         static List<ScoreText> scoreTexts = new List<ScoreText>();
         static PowerText powerText;
         static AnimatedTexture bossTexture;
-        static SoundManager enemyShootManager;
-        static SoundManager damageManager;
 
         static Random random = new Random();
 
@@ -115,11 +113,11 @@ namespace Touhou.ExampleSprite
             for (int i = 0; i < bulletTexFiles.Length; i++)
             {
                 bulletTextures.Add(bulletTexFiles[i], new Dictionary<Color, Texture2D>());
-                bulletTextures[bulletTexFiles[i]].Add(Color.White, Content.Load<Texture2D>(bulletTexFiles[i]));
+                bulletTextures[bulletTexFiles[i]].Add(Color.Gray, Content.Load<Texture2D>(bulletTexFiles[i]));
             }
             //Load all sounds
             for (int i = 0; i < soundFiles.Length; i++)
-                sounds.Add(soundFiles[i], Content.Load<SoundEffect>(soundFiles[i]));
+                sounds.Add(soundFiles[i], new SoundManager(Content.Load<SoundEffect>(soundFiles[i])));
             //Load all music
             for (int i = 0; i < musicFiles.Length; i++)
                 songs.Add(musicFiles[i], Content.Load<Song>(musicFiles[i]));
@@ -162,9 +160,6 @@ namespace Touhou.ExampleSprite
             bossScript1 = new Script(getColoredTexture("B2", Color.Purple), Color.Purple, 0.0f, 100.0f, bossScript1Loops);
             //Starting Reimu texture
             Player.img = reimuTextures[0];
-            //Create sound managers
-            enemyShootManager = new SoundManager(sounds["enemyshoot"]);
-            damageManager = new SoundManager(sounds["damage"]);
             //Set screen boundaries
             screenDim = new Vector2(GraphicsDevice.DisplayMode.Width, GraphicsDevice.DisplayMode.Height);
             foregroundDim = screenDim - gameDim;
@@ -202,9 +197,8 @@ namespace Touhou.ExampleSprite
             time += dt;
             //Get framerate
             fps = (int)(1.0 / dt) + 1;
-            //Reset shoot managers
-            enemyShootManager.reset();
-            damageManager.reset();
+            //Reset sound managers
+            for (int i = 0; i < sounds.Count; i++) sounds.ElementAt(i).Value.reset();
             //Read keyboard input
             keystate = Keyboard.GetState();
             Player.readInput(keystate);
@@ -236,6 +230,15 @@ namespace Touhou.ExampleSprite
                         Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.01f);
                 }
             }
+            //Draw score and power
+            spriteBatch.DrawString(fontfps, "Score: " + score.ToString(), new Vector2(500, 50), Color.White);
+            if (power < 128)
+                spriteBatch.DrawString(fontfps, "Power: " + power.ToString(), new Vector2(500, 80), Color.White);
+            else
+                spriteBatch.DrawString(fontfps, "Power: MAX", new Vector2(500, 80), Color.White);
+
+            //Draw framerate
+            spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
         }
 
         double spawnDelay1 = 0.0;
@@ -298,7 +301,7 @@ namespace Touhou.ExampleSprite
                 return bulletTextures[t][c];
             else
             {
-                Texture2D def = bulletTextures[t][Color.White];
+                Texture2D def = bulletTextures[t][Color.Gray];
                 Color[] data = new Color[def.Width * def.Height];
                 def.GetData(data);
                 int[] rgba = new int[4];
@@ -329,8 +332,6 @@ namespace Touhou.ExampleSprite
             //Window data
             int width = graphics.GraphicsDevice.Viewport.Width;
             int height = graphics.GraphicsDevice.Viewport.Height;
-            //Reset sound
-            enemyShootManager.reset();
             // Begin drawing sprites
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //Draw bg
@@ -415,13 +416,6 @@ namespace Touhou.ExampleSprite
             //Draw foreground
             drawForeground();
 
-            //Draw score and power
-            spriteBatch.DrawString(fontfps, "Score: " + score.ToString(), new Vector2(500, 50), Color.White);
-            spriteBatch.DrawString(fontfps, "Power: " + power.ToString(), new Vector2(500, 80), Color.White);
-
-            //Draw framerate
-            spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
-
             //End drawing sprites
             spriteBatch.End();
             base.Draw(gameTime);
@@ -453,9 +447,17 @@ namespace Touhou.ExampleSprite
             public static void kill()
             {
                 status = PlayerStatus.Dead;
-                sounds["death"].Play();
-                //power = 0;
-                explosions.Add(new Explosion("explode", pos, 4.0f, 0.5f, 2.0f, Color.Crimson));
+                sounds["death"].play();
+                explosions.Add(new Explosion("explode", pos, 5.0f, 0.33f, 3.0f, Color.White));
+                for (int i = 0; i < fireamount1 + fireamount2 + 3; i++)
+                {
+                    items.Add(new Item("itempower", pos + new Vector2(random.Next(-50, 50),
+                        random.Next(-50, 50)), -3.0f));
+                    items.Add(new Item("itemhighpower", pos + new Vector2(random.Next(-50, 50),
+                        random.Next(-50, 50)), -3.0f));
+                }
+                for (int i = 0; i < items.Count; i++) items[i].autoCollect = false;
+                power = 0; fireamount1 = 1; fireamount2 = 0;
             }
             public static void update()
             {
@@ -514,6 +516,9 @@ namespace Touhou.ExampleSprite
                     if (dir.X == 0) img = reimuTextures[0];
                     //Spin focus glyph
                     fAngle += 0.02f;
+                    //Auto-collect items at full power
+                    if (pos.Y < 150 && power == 128)
+                        for (int i = 0; i < items.Count; i++) items[i].autoCollect = true;
                     
                 }
 
@@ -537,37 +542,37 @@ namespace Touhou.ExampleSprite
                 if (power >= 8 && fireamount2 <= 0)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 1; sounds["powersound"].Play();
+                    fireamount2 = 1; sounds["powersound"].play();
                 }
                 if (power >= 16 && fireamount1 <= 1)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount1 = 2; sounds["powersound"].Play();
+                    fireamount1 = 2; sounds["powersound"].play();
                 }
                 if (power >= 32 && fireamount2 <= 1)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 2; sounds["powersound"].Play();
+                    fireamount2 = 2; sounds["powersound"].play();
                 }
                 if (power >= 48 && fireamount1 <= 2)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount1 = 3; sounds["powersound"].Play();
+                    fireamount1 = 3; sounds["powersound"].play();
                 }
                 if (power >= 64 && fireamount2 <= 2)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 3; sounds["powersound"].Play();
+                    fireamount2 = 3; sounds["powersound"].play();
                 }
                 if (power >= 96 && fireamount1 <= 3)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount1 = 4; sounds["powersound"].Play();
+                    fireamount1 = 4; sounds["powersound"].play();
                 }
                 if (power >= 128 && fireamount2 <= 3)
                 {
                     powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 4; sounds["powersound"].Play();
+                    fireamount2 = 4; sounds["powersound"].play();
                 }
                 if (power > 128) power = 128;
             }
@@ -618,7 +623,7 @@ namespace Touhou.ExampleSprite
                             break;
                     }
 
-                    sounds["playershoot"].Play();
+                    sounds["playershoot"].play();
                     firedelay1 += firerate1;
                 }
                 if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && status != PlayerStatus.Dead && conversation == null)
@@ -887,7 +892,7 @@ namespace Touhou.ExampleSprite
                         //Destroy bullet and damage enemy
                         health--;
                         pBullets.RemoveAt(i); i--;
-                        damageManager.play();
+                        sounds["damage"].play();
                         if (health <= 0)
                         {
                             explode(); return true;
@@ -903,8 +908,8 @@ namespace Touhou.ExampleSprite
                 score += 1000;
                 for (int i = 0; i < drops.Length; i++)
                     items.Add(new Item(drops[i], pos + new Vector2(random.Next(-drops.Length * 10, drops.Length * 10),
-                        random.Next(-drops.Length * 5, drops.Length * 5))));
-                sounds["explodesound"].Play();
+                        random.Next(-drops.Length * 5, drops.Length * 5)), -1.5f));
+                sounds["explodesound"].play();
             }
         }
         public class Boss : Enemy
@@ -942,33 +947,42 @@ namespace Touhou.ExampleSprite
                 //Destroy boss and create lots of items and huge explosion
                 explosions.Add(new Explosion("explode", pos, 10.0f, 0.2f, 5.0f, Color.Gold));
                 score += 1000000;
-                sounds["defeat"].Play();
+                sounds["defeat"].play();
                 for (int j = 0; j < 50; j++)
                 {
                     items.Add(new Item("itempoint",
-                        boss.pos + new Vector2(random.Next(-50, 50), random.Next(-50, 50))));
+                        boss.pos + new Vector2(random.Next(-50, 50), random.Next(-50, 50)), -1.5f));
                 }
                 boss = null;
             }
         }
         public class Item : Sprite
         {
-            float speed = -1.5f;
+            float speed;
             string item;
-            public Item(string i, Vector2 p)
+            public bool autoCollect = false;
+            public Item(string i, Vector2 p, float s)
                 : base(textures[i], p, Vector2.Zero, Color.White, drawType.Normal)
             {
                 img = textures[i];
-                item = i;
-                pos = p;
+                item = i; pos = p; speed = s;
                 dim = new Vector2(img.Width, img.Height);
             }
             override public bool update()
             {
-                //Cause the item to fall
-                speed += (float)dt;
-                if (speed >= 1.5f) speed = 1.5f;
-                pos.Y += speed;
+                if (autoCollect)
+                {
+                    //Auto collect item
+                    radians = MathHelper.ToRadians(Player.getAngle(pos) - 90.0f);
+                    pos += new Vector2((float)Math.Cos(radians), (float)Math.Sin(radians)) * 300.0f *(float)dt;
+                }
+                else
+                {
+                    //Cause the item to fall
+                    speed += (float)dt;
+                    if (speed >= 1.5f) speed = 1.5f;
+                    pos.Y += speed;
+                }
                 //Return false if item off-screen
                 if (pos.Y > gameDim.Y + 10)
                     return false;
@@ -978,7 +992,7 @@ namespace Touhou.ExampleSprite
                     Player.status != PlayerStatus.Dead)
                 //Destroy item upon collision with player and create text
                 {
-                    sounds["item"].Play();
+                    sounds["item"].play();
                     switch(item)
                     {
                         case "itempower":
@@ -1218,7 +1232,7 @@ namespace Touhou.ExampleSprite
                             {
                                 eBullets.Add(new Bullet(img,
                                 source.pos, angle, speed, color, drawType.Directional));
-                                enemyShootManager.play();
+                                sounds["enemyshoot"].play();
                             }
                             else
                             {
