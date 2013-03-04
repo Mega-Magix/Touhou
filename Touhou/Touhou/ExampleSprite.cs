@@ -38,7 +38,8 @@ namespace Touhou.ExampleSprite
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
                             "enemy2fly","enemy2moveright","enemy2right",
-                            "itempower","itempoint","itemhighpower",
+                            "itempower","itempoint","itemhighpower","itemfullpower","itemstar",
+                            "itempowerarrow","itempointarrow","itemhighpowerarrow","itemfullpowerarrow","itemstararrow",
                             "bullet1","bullet2",
                             "explode","focus","powerup","bulletexplode",
                             "foreground","sky",
@@ -150,7 +151,7 @@ namespace Touhou.ExampleSprite
             enemyScript2Loops[0] = new Loop(10, 0.5, 1, 0.0);
             enemyScript2Loops[1] = new Loop(5, 0.0, 2, 0.0);
             enemyScript2 = new Script(getColoredTexture("B2", Color.Blue), Color.Blue, 0.0f, 100.0f, enemyScript2Loops);
-            enemyScript3Loops[0,0] = new Loop(10, 1.0, 3, 0.0);
+            enemyScript3Loops[0,0] = new Loop(20, 1.0, 3, 0.0);
             enemyScript3Loops[0,1] = new Loop(20, 0.0, 4, 0.0);
             enemyScript3Loops[1,0] = new Loop(500, 0.02, 5, 0.0);
             enemyScript3 = new Script[]{new Script(getColoredTexture("B3", Color.Green), Color.Green, 0.0f, 150.0f, new Loop[] {enemyScript3Loops[0,0], enemyScript3Loops[0,1]}),
@@ -237,8 +238,7 @@ namespace Touhou.ExampleSprite
             else
                 spriteBatch.DrawString(fontfps, "Power: MAX", new Vector2(500, 80), Color.White);
 
-            //Draw framerate
-            spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
+
         }
 
         double spawnDelay1 = 0.0;
@@ -282,8 +282,8 @@ namespace Touhou.ExampleSprite
             {
                 spawnDelay3 += 1000000.0;
                 string[] drops = new string[20];
-                for (int i = 0; i < 20; i++) drops[i] = "itempoint";
-                for (int i = 0; i < 2; i++) drops[i] = "itemhighpower";
+                for (int i = 0; i < 19; i++) drops[i] = "itempoint";
+                drops[19] = "itemfullpower";
                 enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
                        new Vector2(gameDim.X / 2, 50), 180.0f, 0.0f, Color.Blue, 100,
                        new Script[]{enemyScript3[0], enemyScript3[1]}, drops));
@@ -326,6 +326,7 @@ namespace Touhou.ExampleSprite
 
         static float scrollSpeed = 30.0f;
         static float scrollPos = 0.0f;
+        static double fullPowerTime = -1;
 
         protected override void Draw(GameTime gameTime)
         {
@@ -416,6 +417,17 @@ namespace Touhou.ExampleSprite
             //Draw foreground
             drawForeground();
 
+            //Draw other text
+            spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
+            if (fullPowerTime >= 0)
+            {
+                fullPowerTime += dt;
+                spriteBatch.DrawString(fontfps, "Max Power Mode!!",
+                    new Vector2(MathHelper.Clamp((float)fullPowerTime * 500 - 400, -1000, 100), 100.0f),
+                    Color.Red);
+                if (fullPowerTime >= 3) fullPowerTime = -1;
+            }
+
             //End drawing sprites
             spriteBatch.End();
             base.Draw(gameTime);
@@ -449,7 +461,7 @@ namespace Touhou.ExampleSprite
                 status = PlayerStatus.Dead;
                 sounds["death"].play();
                 explosions.Add(new Explosion("explode", pos, 5.0f, 0.33f, 3.0f, Color.White));
-                for (int i = 0; i < fireamount1 + fireamount2 + 3; i++)
+                for (int i = 0; i < fireamount1 + 1; i++)
                 {
                     items.Add(new Item("itempower", pos + new Vector2(random.Next(-50, 50),
                         random.Next(-50, 50)), -3.0f));
@@ -457,7 +469,7 @@ namespace Touhou.ExampleSprite
                         random.Next(-50, 50)), -3.0f));
                 }
                 for (int i = 0; i < items.Count; i++) items[i].autoCollect = false;
-                power = 0; fireamount1 = 1; fireamount2 = 0;
+                fireamount1 = 1; fireamount2 = 0; power /= 2; powerUp();
             }
             public static void update()
             {
@@ -537,44 +549,24 @@ namespace Touhou.ExampleSprite
                         Color.White, fAngle, new Vector2(textures["focus"].Width, textures["focus"].Height) / 2,
                         1.0f, playerEffect, layer - 0.01f);
             }
-            public static void powerUp()
+            public static bool powerUp()
             {
-                if (power >= 8 && fireamount2 <= 0)
+                bool powerup = false;
+                if (power >= 128) power = 128;
+                if (power >= 8 && fireamount2 <= 0) { fireamount2++; powerup = true; }
+                if (power >= 16 && fireamount1 <= 1) { fireamount1++; powerup = true; }
+                if (power >= 32 && fireamount2 <= 1) { fireamount2++; powerup = true; }
+                if (power >= 48 && fireamount1 <= 2) { fireamount1++; powerup = true; }
+                if (power >= 64 && fireamount2 <= 2) { fireamount2++; powerup = true; }
+                if (power >= 96 && fireamount1 <= 3) { fireamount1++; powerup = true; }
+                if (power >= 128 && fireamount2 <= 3) { fireamount2++; powerup = true; fullPowerTime = 0;
+                for (int i = 0; i < eBullets.Count; i++)
                 {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 1; sounds["powersound"].play();
+                    items.Add(new Item("itemstar", eBullets[i].pos, 0));
+                    eBullets.RemoveAt(i); i--;
                 }
-                if (power >= 16 && fireamount1 <= 1)
-                {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount1 = 2; sounds["powersound"].play();
                 }
-                if (power >= 32 && fireamount2 <= 1)
-                {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 2; sounds["powersound"].play();
-                }
-                if (power >= 48 && fireamount1 <= 2)
-                {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount1 = 3; sounds["powersound"].play();
-                }
-                if (power >= 64 && fireamount2 <= 2)
-                {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 3; sounds["powersound"].play();
-                }
-                if (power >= 96 && fireamount1 <= 3)
-                {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount1 = 4; sounds["powersound"].play();
-                }
-                if (power >= 128 && fireamount2 <= 3)
-                {
-                    powerText = new PowerText(textures["powerup"], pos, Color.White);
-                    fireamount2 = 4; sounds["powersound"].play();
-                }
-                if (power > 128) power = 128;
+                return powerup; 
             }
             public static void readInput(KeyboardState keystate)
             {
@@ -967,6 +959,7 @@ namespace Touhou.ExampleSprite
                 img = textures[i];
                 item = i; pos = p; speed = s;
                 dim = new Vector2(img.Width, img.Height);
+                if (i == "itemstar") autoCollect = true;
             }
             override public bool update()
             {
@@ -983,6 +976,12 @@ namespace Touhou.ExampleSprite
                     if (speed >= 1.5f) speed = 1.5f;
                     pos.Y += speed;
                 }
+                //Draw arrow if item above screen
+                if (pos.Y < 0)
+                {
+                    Texture2D arrowImg = textures[item + "arrow"];
+                    spriteBatch.Draw(arrowImg, new Vector2(pos.X - arrowImg.Width / 2, 0), Color.White);
+                }
                 //Return false if item off-screen
                 if (pos.Y > gameDim.Y + 10)
                     return false;
@@ -996,16 +995,38 @@ namespace Touhou.ExampleSprite
                     switch(item)
                     {
                         case "itempower":
-                        scoreTexts.Add(new ScoreText(10, pos, Color.White));
-                        power++; Player.powerUp(); break;
+                            scoreTexts.Add(new ScoreText(10, pos, Color.White));
+                            power++;
+                            if (Player.powerUp())
+                            {
+                                powerText = new PowerText(textures["powerup"], pos, Color.White);
+                                sounds["powersound"].play();
+                            }
+                            break;
                         case "itemhighpower":
                             scoreTexts.Add(new ScoreText(100, pos, Color.White));
-                            power += 10; Player.powerUp(); break;
+                            power += 10;
+                            if (Player.powerUp())
+                            {
+                                powerText = new PowerText(textures["powerup"], pos, Color.White);
+                                sounds["powersound"].play();
+                            }
+                            break;
+                        case "itemfullpower":
+                            scoreTexts.Add(new ScoreText(1000, pos, Color.White));
+                            power = 128;
+                            if (Player.powerUp())
+                            {
+                                powerText = new PowerText(textures["powerup"], pos, Color.White);
+                                sounds["powersound"].play();
+                            }
+                            break;
                         case "itempoint":
                         if (Player.pos.Y < 150)
                             scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
                         else scoreTexts.Add(new ScoreText(100000 - (int)Player.pos.Y * 100, pos, Color.White));
                         break;
+                        case "itemstar": scoreTexts.Add(new ScoreText(1000, pos, Color.White)); break;
                     }
                     //Return false to indicate item destruction
                     return false;
@@ -1047,7 +1068,7 @@ namespace Touhou.ExampleSprite
                     0.0f, Vector2.Zero, expandAmount, SpriteEffects.None, layer);
             }
         }
-
+        
         public class ScoreText
         {
             public int amount;
