@@ -266,7 +266,7 @@ namespace Touhou.ExampleSprite
         double spawnDelay2 = 10.0;
         double spawnDelay3 = 3.0;
         double waveTime = 15.0;
-        int waves = 10;
+        int waves = 0;
         static double fullPowerTime = -1;
 
         public void spawnEnemies()
@@ -479,8 +479,8 @@ namespace Touhou.ExampleSprite
             public static float firerate2 = 0.5f;
             public static float firedelay1 = 0.0f;
             public static float firedelay2 = 0.0f;
-            public static int fireamount1 = 4;
-            public static int fireamount2 = 4;
+            public static int fireamount1 = 1;
+            public static int fireamount2 = 0;
             public static bool focused = false;
             public static float fAngle = 0.0f;
             public static double bombDelay = -1;
@@ -981,7 +981,7 @@ namespace Touhou.ExampleSprite
                 if (conversation == null && spellcard == null)
                     for (int i = 0; i < scripts.Length; i++) scripts[i].run(boss.pos);
                 if (health < 750 && spellcard == null)
-                    spellcard = new Spellcard("Star Sign", "Radiant Star Crosses", "marisa", 30,
+                    spellcard = new Spellcard("Star Sign", "Radiant Star Crosses", "marisa", 60,
                     new List<Background> {new Background(textures["bg1"],Vector2.Zero,1.0f),
                         new Background(textures["bg2"],new Vector2(-50,0),0.99f)},
                         new Script[] {bossScript1});
