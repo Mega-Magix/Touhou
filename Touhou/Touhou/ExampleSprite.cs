@@ -1111,20 +1111,13 @@ namespace Touhou.ExampleSprite
                     }
                 }
                 if (time < 0.5) return true;
-                if (minDist < 10000.0f)
-                {
-                    float radians = MathHelper.ToRadians(minAngle);
-                    dir += new Vector2((float)Math.Cos(radians),
+                float radians;
+                if (minDist < 10000.0f) radians = MathHelper.ToRadians(minAngle);
+                else radians = MathHelper.ToRadians(Player.getAngle(pos)-90.0f);
+                dir += new Vector2((float)Math.Cos(radians),
                         (float)Math.Sin(radians)) / 20.0f;
-                    dir.X = MathHelper.Clamp(dir.X, -1, 1);
-                    dir.Y = MathHelper.Clamp(dir.Y, -1, 1);
-                }
-                else
-                {
-                    float radians = MathHelper.ToRadians(Player.getAngle(pos)-90.0f);
-                    dir += new Vector2(MathHelper.Clamp((float)Math.Cos(radians),-20,20),
-                        MathHelper.Clamp((float)Math.Sin(radians), -1, 1)) / 20.0f;
-                }
+                dir.X = MathHelper.Clamp(dir.X, -1, 1);
+                dir.Y = MathHelper.Clamp(dir.Y, -1, 1);
                 return true;
             }
             public override void draw(float layer)
