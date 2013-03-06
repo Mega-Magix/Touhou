@@ -32,6 +32,7 @@ namespace Touhou.ExampleSprite
         //Lists for player bullets and enemy bullets
         static List<Bullet> pBullets = new List<Bullet>();
         static List<Bullet> eBullets = new List<Bullet>();
+        static List<Orb> orbs = new List<Orb>();
         static List<Enemy> enemies = new List<Enemy>();
 
         //Arrays and lists for storing texture and sound data
@@ -40,15 +41,17 @@ namespace Touhou.ExampleSprite
                             "enemy2fly","enemy2moveright","enemy2right",
                             "itempower","itempoint","itemhighpower","itemfullpower","itemstar",
                             "itempowerarrow","itempointarrow","itemhighpowerarrow","itemfullpowerarrow","itemstararrow",
-                            "bullet1","bullet2",
+                            "bullet1","bullet2","bomb1",
                             "explode","focus","powerup","bulletexplode",
                             "foreground","sky",
                             "textbox","reimu1","reimu2","marisa1","marisa2","marisafly"
                             };
         string[] bulletTexFiles = { "explode", "bulletexplode",
                                       "B1", "B2", "B3", "B4", "B5", "B6", "B7"};
-        string[] soundFiles = { "death", "enemyshoot", "explodesound", "playershoot", "item", "damage",
-                              "powersound", "defeat"};
+        string[] soundFiles = { "death",
+                                  "enemyshoot1","enemyshoot2","enemyshoot3",
+                                  "explodesound", "playershoot", "item", "damage",
+                              "powersound", "spellcard", "defeat"};
         string[] musicFiles = {"A Soul As Red As Ground Cherry",
                                   "Song of the Night Sparrow",
                                   "Fall of Fall",
@@ -67,6 +70,8 @@ namespace Touhou.ExampleSprite
         static List<AnimatedTexture> reimuTextures = new List<AnimatedTexture>();
         static List<AnimatedTexture> enemyTextures = new List<AnimatedTexture>();
         static List<Explosion> explosions = new List<Explosion>();
+        static Spellcard spellcard;
+        static Bomb bomb;
         static List<Item> items = new List<Item>();
         static List<ScoreText> scoreTexts = new List<ScoreText>();
         static PowerText powerText;
@@ -242,7 +247,7 @@ namespace Touhou.ExampleSprite
         }
 
         double spawnDelay1 = 0.0;
-        double spawnRate1 = 1.0;
+        double spawnRate1 = 0.5;
         double spawnDelay2 = 10.0;
         double spawnDelay3 = 3.0;
         double waveTime = 15.0;
@@ -397,6 +402,16 @@ namespace Touhou.ExampleSprite
                        Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
                 if (!powerText.update()) powerText = null;
             }
+            //Update and draw orbs
+            for (int i = 0; i < orbs.Count; i++)
+            {
+                Orb b = orbs[i];
+                if (!b.update()) { orbs.RemoveAt(i); i--;
+                explosions.Add(new Explosion("explode", b.pos, 5.0f, 1.0f, 1.0f, Color.White));
+                    sounds["enemyshoot1"].play(); continue;
+                }
+                b.draw(0.1f);
+            }
             //Switch blend state for color blending
             spriteBatch.End();
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.NonPremultiplied);
@@ -410,6 +425,10 @@ namespace Touhou.ExampleSprite
             //Switch back
             spriteBatch.End();
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
+
+            //Update spellcards
+            if (spellcard != null && !spellcard.update()) spellcard = null;
+            if (bomb != null && !bomb.update()) bomb = null;
 
             //Draw conversation
             if (conversation != null) if (!conversation.show()) conversation = null;
@@ -438,6 +457,7 @@ namespace Touhou.ExampleSprite
         public static class Player
         {
             public static AnimatedTexture img;
+            public static string name = "reimu";
             public static Vector2 dir = Vector2.Zero;
             public static Vector2 pos;
             public static PlayerStatus status = PlayerStatus.Alive;
@@ -452,12 +472,14 @@ namespace Touhou.ExampleSprite
             public static int fireamount2 = 0;
             public static bool focused = false;
             public static float fAngle = 0.0f;
+            public static double bombDelay = -1;
             public static float getAngle(Vector2 p)
             {
                 return -MathHelper.ToDegrees((float)Math.Atan2(p.X - pos.X, p.Y - pos.Y));
             }
             public static void kill()
             {
+                if (bomb != null) return;
                 status = PlayerStatus.Dead;
                 sounds["death"].play();
                 explosions.Add(new Explosion("explode", pos, 5.0f, 0.33f, 3.0f, Color.White));
@@ -580,76 +602,83 @@ namespace Touhou.ExampleSprite
                 if (keystate.IsKeyDown(Keys.Down)) dir.Y += moveSpeed;
                 if (keystate.IsKeyDown(Keys.LeftShift)) { focused = true; dir /= 2; }
                 else focused = false;
-                if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0 && status != PlayerStatus.Dead && conversation == null)
+                if (status != PlayerStatus.Dead && conversation == null && bomb == null)
                 {
-                    //Shoot regular bullets at fixed rate based on power when Z is pressed
-                    switch (fireamount1)
+                    if (keystate.IsKeyDown(Keys.Z) && firedelay1 < 0)
                     {
-                        case 1:
-                            pBullets.Add(new Bullet(textures["bullet1"], pos,
-                            0.0f, 750.0f, Color.Red, drawType.Directional));
-                            break;
-                        case 2:
-                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X - 5, pos.Y),
-                            0.0f, 750.0f, Color.Red, drawType.Directional));
-                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X + 5, pos.Y),
-                            0.0f, 750.0f, Color.Red, drawType.Directional));
-                            break;
-                        case 3:
-                            pBullets.Add(new Bullet(textures["bullet1"], pos,
-                            -10.0f, 750.0f, Color.Red, drawType.Directional));
-                            pBullets.Add(new Bullet(textures["bullet1"], pos,
-                            0.0f, 750.0f, Color.Red, drawType.Directional));
-                            pBullets.Add(new Bullet(textures["bullet1"], pos,
-                            10.0f, 750.0f, Color.Red, drawType.Directional));
-                            break;
-                        case 4:
-                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X - 5, pos.Y),
-                            0.0f, 750.0f, Color.Red, drawType.Directional));
-                            pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X + 5, pos.Y),
-                            0.0f, 750.0f, Color.Red, drawType.Directional));
-                            pBullets.Add(new Bullet(textures["bullet1"], pos,
-                            -10.0f, 750.0f, Color.Red, drawType.Directional));
-                            pBullets.Add(new Bullet(textures["bullet1"], pos,
-                            10.0f, 750.0f, Color.Red, drawType.Directional));
-                            break;
-                    }
+                        //Shoot regular bullets at fixed rate based on power when Z is pressed
+                        switch (fireamount1)
+                        {
+                            case 1:
+                                pBullets.Add(new Bullet(textures["bullet1"], pos,
+                                0.0f, 750.0f, Color.Red, drawType.Directional));
+                                break;
+                            case 2:
+                                pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X - 5, pos.Y),
+                                0.0f, 750.0f, Color.Red, drawType.Directional));
+                                pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X + 5, pos.Y),
+                                0.0f, 750.0f, Color.Red, drawType.Directional));
+                                break;
+                            case 3:
+                                pBullets.Add(new Bullet(textures["bullet1"], pos,
+                                -10.0f, 750.0f, Color.Red, drawType.Directional));
+                                pBullets.Add(new Bullet(textures["bullet1"], pos,
+                                0.0f, 750.0f, Color.Red, drawType.Directional));
+                                pBullets.Add(new Bullet(textures["bullet1"], pos,
+                                10.0f, 750.0f, Color.Red, drawType.Directional));
+                                break;
+                            case 4:
+                                pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X - 5, pos.Y),
+                                0.0f, 750.0f, Color.Red, drawType.Directional));
+                                pBullets.Add(new Bullet(textures["bullet1"], new Vector2(pos.X + 5, pos.Y),
+                                0.0f, 750.0f, Color.Red, drawType.Directional));
+                                pBullets.Add(new Bullet(textures["bullet1"], pos,
+                                -10.0f, 750.0f, Color.Red, drawType.Directional));
+                                pBullets.Add(new Bullet(textures["bullet1"], pos,
+                                10.0f, 750.0f, Color.Red, drawType.Directional));
+                                break;
+                        }
 
-                    sounds["playershoot"].play();
-                    firedelay1 += firerate1;
-                }
-                if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0 && status != PlayerStatus.Dead && conversation == null)
-                {
-                    //Shoot homing bullets at fixed rate based on power when Z is pressed
-                    if (fireamount2 >= 1)
-                    {
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        -30.0f, 750.0f, Color.Blue, drawType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        30.0f, 750.0f, Color.Blue, drawType.Homing));
+                        sounds["playershoot"].play();
+                        firedelay1 += firerate1;
                     }
-                    if (fireamount2 >= 2)
+                    if (keystate.IsKeyDown(Keys.Z) && firedelay2 < 0)
                     {
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        -50.0f, 750.0f, Color.Blue, drawType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        50.0f, 750.0f, Color.Blue, drawType.Homing));
+                        //Shoot homing bullets at fixed rate based on power when Z is pressed
+                        if (fireamount2 >= 1)
+                        {
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            -30.0f, 750.0f, Color.Blue, drawType.Homing));
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            30.0f, 750.0f, Color.Blue, drawType.Homing));
+                        }
+                        if (fireamount2 >= 2)
+                        {
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            -50.0f, 750.0f, Color.Blue, drawType.Homing));
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            50.0f, 750.0f, Color.Blue, drawType.Homing));
+                        }
+                        if (fireamount2 >= 3)
+                        {
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            -70.0f, 750.0f, Color.Blue, drawType.Homing));
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            70.0f, 750.0f, Color.Blue, drawType.Homing));
+                        }
+                        if (fireamount2 >= 4)
+                        {
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            -90.0f, 750.0f, Color.Blue, drawType.Homing));
+                            pBullets.Add(new Bullet(textures["bullet2"], pos,
+                            90.0f, 750.0f, Color.Blue, drawType.Homing));
+                        }
+                        firedelay2 += firerate2;
                     }
-                    if (fireamount2 >= 3)
+                    if (keystate.IsKeyDown(Keys.X))
                     {
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        -70.0f, 750.0f, Color.Blue, drawType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        70.0f, 750.0f, Color.Blue, drawType.Homing));
+                        bomb = new Bomb("Spirit Sign", "Fantasy Orb", "reimu", 9.0, 0);
                     }
-                    if (fireamount2 >= 4)
-                    {
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        -90.0f, 750.0f, Color.Blue, drawType.Homing));
-                        pBullets.Add(new Bullet(textures["bullet2"], pos,
-                        90.0f, 750.0f, Color.Blue, drawType.Homing));
-                    }
-                    firedelay2 += firerate2;
                 }
             }
         }
@@ -732,7 +761,7 @@ namespace Touhou.ExampleSprite
                     return false;
                 return true;
             }
-            public void draw(float layer)
+            virtual public void draw(float layer)
             {
                 switch (type)
                 {
@@ -790,7 +819,6 @@ namespace Touhou.ExampleSprite
             }
         }
 
-
         public class Bullet : Sprite
         {
             public float hitRadius;
@@ -825,30 +853,30 @@ namespace Touhou.ExampleSprite
         }
         public class Enemy : Sprite
         {
-            public int health;
+            public float health;
             public SpriteEffects effect = SpriteEffects.None;
             public Script[] scripts;
             public string[] drops;
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script scr, string[] dr)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, float h, Script scr, string[] dr)
                 : base(t, p, a, s, c, drawType.Animated)
             {
                 health = h; scripts = new Script[1]; scripts[0] = scr; drops = dr;
             }
             //Constructor given vector direction
-            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script scr, string[] dr)
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, float h, Script scr, string[] dr)
                 : base(t, p, d, c, drawType.Animated)
             {
                 health = h; scripts = new Script[1]; scripts[0] = scr; drops = dr;
             }
             //Constructor given angular direction
-            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, int h, Script[] scr, string[] dr)
+            public Enemy(AnimatedTexture t, Vector2 p, float a, float s, Color c, float h, Script[] scr, string[] dr)
                 : base(t, p, a, s, c, drawType.Animated)
             {
                 health = h; scripts = scr; drops = dr;
             }
             //Constructor given vector direction
-            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, int h, Script[] scr, string[] dr)
+            public Enemy(AnimatedTexture t, Vector2 p, Vector2 d, Color c, float h, Script[] scr, string[] dr)
                 : base(t, p, d, c, drawType.Animated)
             {
                 health = h; scripts = scr; drops = dr;
@@ -862,7 +890,7 @@ namespace Touhou.ExampleSprite
                 if (conversation == null)
                 {
                     for (int i = 0; i < scripts.Length; i++)
-                        scripts[i].run(this);
+                        scripts[i].run(this.pos);
                 }
                 //Return false if sprite off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
@@ -882,7 +910,7 @@ namespace Touhou.ExampleSprite
                         Math.Abs(pBullets[i].pos.Y - pos.Y) < dim.Y)
                     {
                         //Destroy bullet and damage enemy
-                        health--;
+                        health -= 1.0f;
                         pBullets.RemoveAt(i); i--;
                         sounds["damage"].play();
                         if (health <= 0)
@@ -1034,6 +1062,77 @@ namespace Touhou.ExampleSprite
                 return true;
             }
         }
+        public class Orb : Sprite
+        {
+            float damage;
+            double totalTime;
+            double time = 0;
+            Color c;
+            public Orb(Texture2D t, Vector2 p, float a, float s, Color c, drawType ty, float d, float ti)
+                : base(t, p, a, s, c, ty)
+            {
+                damage = d; totalTime = ti; this.c = c;
+            }
+            public bool update()
+            {
+                //Move the sprite
+                pos += dir * speed * (float)dt;
+                time += dt;
+                if (time > totalTime) return false;
+                c.R = (byte)(time * -15); c.B = (byte)(time * 15);
+                float minDist = 10000.0f;
+                float minAngle = 0.0f;
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    float dist = (float)Math.Sqrt((enemies[i].pos.X - pos.X) * (enemies[i].pos.X - pos.X) +
+                        (enemies[i].pos.Y - pos.Y) * (enemies[i].pos.Y - pos.Y));
+                    if (dist < 30)
+                    {
+                        enemies[i].health -= damage * (float)dt * 60.0f; sounds["damage"].play();
+                    }
+                    if (enemies[i].health < 0)
+                    {
+                        enemies[i].explode(); enemies.RemoveAt(i); i--; continue;
+                    }
+                    if (dist < minDist)
+                    {
+                        minAngle = MathHelper.ToDegrees((float)Math.Atan2((enemies[i].pos.Y - pos.Y),
+                            (enemies[i].pos.X - pos.X)));
+                        minDist = dist;
+                    }
+                }
+                for (int i = 0; i < eBullets.Count; i++)
+                {
+                    Bullet b = eBullets[i];
+                    if (Math.Sqrt((b.pos.X - pos.X) * (b.pos.X - pos.X) +
+                        (b.pos.Y - pos.Y) * (b.pos.Y - pos.Y)) < 30)
+                    {
+                        items.Add(new Item("itemstar", b.pos, 0)); eBullets.RemoveAt(i); i--; 
+                    }
+                }
+                if (time < 0.5) return true;
+                if (minDist < 10000.0f)
+                {
+                    float radians = MathHelper.ToRadians(minAngle);
+                    dir += new Vector2((float)Math.Cos(radians),
+                        (float)Math.Sin(radians)) / 20.0f;
+                    dir.X = MathHelper.Clamp(dir.X, -1, 1);
+                    dir.Y = MathHelper.Clamp(dir.Y, -1, 1);
+                }
+                else
+                {
+                    float radians = MathHelper.ToRadians(Player.getAngle(pos)-90.0f);
+                    dir += new Vector2(MathHelper.Clamp((float)Math.Cos(radians),-20,20),
+                        MathHelper.Clamp((float)Math.Sin(radians), -1, 1)) / 20.0f;
+                }
+                return true;
+            }
+            public override void draw(float layer)
+            {
+                spriteBatch.Draw(img, pos - dim / 2, img.Bounds, c, 0.0f,
+                        Vector2.Zero, (float)Math.Sin(time*3)*0.2f+1.0f, SpriteEffects.None, layer);
+            }
+        }
 
         public class Explosion
         {
@@ -1066,6 +1165,54 @@ namespace Touhou.ExampleSprite
             {
                 spriteBatch.Draw(img, pos - dim * expandAmount / 2, img.Bounds, new Color(255, 255, 255, alphaAmount),
                     0.0f, Vector2.Zero, expandAmount, SpriteEffects.None, layer);
+            }
+        }
+
+        public class Spellcard
+        {
+            string type;
+            string name;
+            string owner;
+            double time = 0.0;
+            double totalTime;
+            public Spellcard(string t, string n, string o, double ti)
+            {
+                type = t; name = n; owner = o; totalTime = ti;
+                sounds["spellcard"].play();
+                if (owner == Player.name)
+                    explosions.Add(new Explosion("explode", Player.pos, 5.0f, 0.33f, 3.0f, Color.White));
+            }
+            public bool update()
+            {
+                time += dt;
+                for (int i = 0; i < items.Count; i++)
+                {
+                    items[i].autoCollect = true;
+                }
+                if (time < 3)
+                    spriteBatch.Draw(textures[owner + "2"], new Vector2(50, gameDim.Y-textures[owner+"2"].Height),
+                        textures[owner + "2"].Bounds,Color.White, 0.0f, Vector2.Zero,
+                        MathHelper.Clamp(1.5f-(float)time, 1.0f, 2.0f),SpriteEffects.None, 0.01f);
+                spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(50, 460), Color.Red);
+                if (time > totalTime) return false;
+                return true;
+            }
+        }
+        public class Bomb : Spellcard
+        {
+            int script;
+            public Bomb(string t, string n, string o, double ti, int scr)
+                : base(t, n, o, ti)
+            {
+                script = scr;
+                switch (scr)
+                {
+                    case 0:
+                        for (int i = 0; i < 10; i++)
+                            orbs.Add(new Orb(textures["bomb1"], Player.pos, i * 36, 200, Color.Red,
+                                drawType.Normal, 0.5f, 8.0f));
+                        break;
+                }
             }
         }
         
@@ -1239,21 +1386,21 @@ namespace Touhou.ExampleSprite
                 loopData = s.loopData; loops.Add(new Loop(loopData[0].totalLoops, loopData[0].loopDelay,
                                   loopData[0].loopScript, 0.0));
             }
-            public void run(Enemy source)
+            public void run(Vector2 sourcePos)
             {
                 for (int i = 0; i < loops.Count; i++)
                 {
                     int loopLevel = loops[i].loopScript - loopData[0].loopScript;
                     if (time >= loops[i].nextLoopTime)
                     {
-                        if (loops[i].run(this,source))
+                        if (loops[i].run(this,sourcePos))
                         {
                             loops[i].nextLoopTime = loops[i].loopDelay + time;
                             if (loopLevel >= loopData.Length - 1)
                             {
                                 eBullets.Add(new Bullet(img,
-                                source.pos, angle, speed, color, drawType.Directional));
-                                sounds["enemyshoot"].play();
+                                sourcePos, angle, speed, color, drawType.Directional));
+                                sounds["enemyshoot3"].play();
                             }
                             else
                             {
@@ -1282,15 +1429,15 @@ namespace Touhou.ExampleSprite
             {
                 totalLoops = tLoops; loopDelay = lDelay; loopScript = lScript; loopNum = 0;
             }
-            public bool run(Script script, Enemy source)
+            public bool run(Script script, Vector2 sourcePos)
             {
                 if (loopNum >= totalLoops) return false;
-                if (loopNum > 0) runScript(script, source);
+                if (loopNum > 0) runScript(script, sourcePos);
                 loopNum++;
                 return true;
                 
             }
-            public void runScript(Script script, Enemy source)
+            public void runScript(Script script, Vector2 sourcePos)
             {
                 switch (loopScript)
                 {
@@ -1298,7 +1445,7 @@ namespace Touhou.ExampleSprite
                         script.angle = (float)random.NextDouble() * 360.0f;
                         break;
                     case 1:
-                        script.angle = Player.getAngle(source.pos) - 60.0f;
+                        script.angle = Player.getAngle(sourcePos) - 60.0f;
                         break;
                     case 2:
                         script.angle += 30.0f;
