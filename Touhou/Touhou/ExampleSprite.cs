@@ -987,7 +987,7 @@ namespace Touhou.ExampleSprite
                 img = textures[i];
                 item = i; pos = p; speed = s;
                 dim = new Vector2(img.Width, img.Height);
-                if (i == "itemstar") autoCollect = true;
+                if (i == "itemstar" || bomb != null) autoCollect = true;
             }
             override public bool update()
             {
@@ -1181,14 +1181,14 @@ namespace Touhou.ExampleSprite
                 sounds["spellcard"].play();
                 if (owner == Player.name)
                     explosions.Add(new Explosion("explode", Player.pos, 5.0f, 0.33f, 3.0f, Color.White));
-            }
-            public bool update()
-            {
-                time += dt;
                 for (int i = 0; i < items.Count; i++)
                 {
                     items[i].autoCollect = true;
                 }
+            }
+            public bool update()
+            {
+                time += dt;
                 if (time < 3)
                     spriteBatch.Draw(textures[owner + "2"], new Vector2(50, gameDim.Y-textures[owner+"2"].Height),
                         textures[owner + "2"].Bounds,Color.White, 0.0f, Vector2.Zero,
