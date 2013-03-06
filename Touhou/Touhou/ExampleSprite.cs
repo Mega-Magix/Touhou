@@ -39,8 +39,10 @@ namespace Touhou.ExampleSprite
         string[] texFiles = {"reimufly","reimumoveleft","reimuleft",
                             "enemy1fly","enemy1moveright","enemy1right",
                             "enemy2fly","enemy2moveright","enemy2right",
-                            "itempower","itempoint","itemhighpower","itemfullpower","itemstar",
-                            "itempowerarrow","itempointarrow","itemhighpowerarrow","itemfullpowerarrow","itemstararrow",
+                            "itempower","itempoint","itemhighpower","itemstar",
+                            "itemfullpower","itembomb","itemplayer",
+                            "itempowerarrow","itempointarrow","itemhighpowerarrow","itemstararrow",
+                            "itemfullpowerarrow","itembombarrow","itemplayerarrow",
                             "bullet1","bullet2","bomb1",
                             "explode","focus","powerup","bulletexplode",
                             "foreground","sky",
@@ -51,7 +53,7 @@ namespace Touhou.ExampleSprite
         string[] soundFiles = { "death",
                                   "enemyshoot1","enemyshoot2","enemyshoot3",
                                   "explodesound", "playershoot", "item", "damage",
-                              "powersound", "spellcard", "defeat"};
+                              "powersound", "spellcard", "defeat", "1up"};
         string[] musicFiles = {"A Soul As Red As Ground Cherry",
                                   "Song of the Night Sparrow",
                                   "Fall of Fall",
@@ -96,6 +98,8 @@ namespace Touhou.ExampleSprite
 
         static int score = 0;
         static int power = 0;
+        static int players = 2;
+        static int bombs = 3;
 
         //Boss data
         static Boss boss;
@@ -236,12 +240,14 @@ namespace Touhou.ExampleSprite
                         Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.01f);
                 }
             }
-            //Draw score and power
+            //Draw score, power, lives, and bombs
             spriteBatch.DrawString(fontfps, "Score: " + score.ToString(), new Vector2(500, 50), Color.White);
             if (power < 128)
                 spriteBatch.DrawString(fontfps, "Power: " + power.ToString(), new Vector2(500, 80), Color.White);
             else
                 spriteBatch.DrawString(fontfps, "Power: MAX", new Vector2(500, 80), Color.White);
+            spriteBatch.DrawString(fontfps, "Player: " + players.ToString(), new Vector2(500, 120), Color.White);
+            spriteBatch.DrawString(fontfps, "Bomb: " + bombs.ToString(), new Vector2(500, 150), Color.White);
 
 
         }
@@ -288,7 +294,7 @@ namespace Touhou.ExampleSprite
                 spawnDelay3 += 1000000.0;
                 string[] drops = new string[20];
                 for (int i = 0; i < 19; i++) drops[i] = "itempoint";
-                drops[19] = "itemfullpower";
+                drops[19] = "itembomb";
                 enemies.Add(new Enemy(new AnimatedTexture(enemyTextures[0]),
                        new Vector2(gameDim.X / 2, 50), 180.0f, 0.0f, Color.Blue, 100,
                        new Script[]{enemyScript3[0], enemyScript3[1]}, drops));
@@ -490,8 +496,9 @@ namespace Touhou.ExampleSprite
                     items.Add(new Item("itemhighpower", pos + new Vector2(random.Next(-50, 50),
                         random.Next(-50, 50)), -3.0f));
                 }
+                if (players == 1) items.Add(new Item("itemfullpower", pos, -3.0f));
                 for (int i = 0; i < items.Count; i++) items[i].autoCollect = false;
-                fireamount1 = 1; fireamount2 = 0; power /= 2; powerUp();
+                players--; bombs = 3; fireamount1 = 1; fireamount2 = 0; power /= 2; powerUp();
             }
             public static void update()
             {
@@ -675,9 +682,9 @@ namespace Touhou.ExampleSprite
                         }
                         firedelay2 += firerate2;
                     }
-                    if (keystate.IsKeyDown(Keys.X))
+                    if (keystate.IsKeyDown(Keys.X) && bombs > 0)
                     {
-                        bomb = new Bomb("Spirit Sign", "Fantasy Orb", "reimu", 9.0, 0);
+                        bomb = new Bomb("Spirit Sign", "Fantasy Orb", "reimu", 9.0, 0); bombs--;
                     }
                 }
             }
@@ -927,7 +934,10 @@ namespace Touhou.ExampleSprite
                 explosions.Add(new Explosion("explode",pos, 2.0f, 2.0f, 0.5f, color));
                 score += 1000;
                 for (int i = 0; i < drops.Length; i++)
-                    items.Add(new Item(drops[i], pos + new Vector2(random.Next(-drops.Length * 10, drops.Length * 10),
+                    if (drops[i] == "itemfullpower" || drops[i] == "itembomb" || drops[i] == "itemplayer")
+                        items.Add(new Item(drops[i], pos, -1.5f));
+                    else
+                        items.Add(new Item(drops[i], pos + new Vector2(random.Next(-drops.Length * 10, drops.Length * 10),
                         random.Next(-drops.Length * 5, drops.Length * 5)), -1.5f));
                 sounds["explodesound"].play();
             }
@@ -973,6 +983,7 @@ namespace Touhou.ExampleSprite
                     items.Add(new Item("itempoint",
                         boss.pos + new Vector2(random.Next(-50, 50), random.Next(-50, 50)), -1.5f));
                 }
+                items.Add(new Item("itemplayer", boss.pos, -1.5f));
                 boss = null;
             }
         }
@@ -1049,6 +1060,8 @@ namespace Touhou.ExampleSprite
                                 sounds["powersound"].play();
                             }
                             break;
+                        case "itembomb": bombs++; break;
+                        case "itemplayer": players++; sounds["1up"].play(); break;
                         case "itempoint":
                         if (Player.pos.Y < 150)
                             scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
