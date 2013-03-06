@@ -1118,7 +1118,7 @@ namespace Touhou.ExampleSprite
                 {
                     Bullet b = eBullets[i];
                     if (Math.Sqrt((b.pos.X - pos.X) * (b.pos.X - pos.X) +
-                        (b.pos.Y - pos.Y) * (b.pos.Y - pos.Y)) < 30)
+                        (b.pos.Y - pos.Y) * (b.pos.Y - pos.Y)) < 50)
                     {
                         items.Add(new Item("itemstar", b.pos, 0)); eBullets.RemoveAt(i); i--; 
                     }
