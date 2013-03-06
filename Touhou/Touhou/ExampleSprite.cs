@@ -50,7 +50,7 @@ namespace Touhou.ExampleSprite
                             };
         string[] bulletTexFiles = { "explode", "bulletexplode",
                                       "B1", "B2", "B3", "B4", "B5", "B6", "B7"};
-        string[] soundFiles = { "death",
+        string[] soundFiles = { "death","graze",
                                   "enemyshoot1","enemyshoot2","enemyshoot3",
                                   "explodesound", "playershoot", "item", "damage",
                               "powersound", "spellcard", "defeat", "1up"};
@@ -98,6 +98,8 @@ namespace Touhou.ExampleSprite
 
         static int score = 0;
         static int power = 0;
+        static int point = 0;
+        static int graze;
         static int players = 2;
         static int bombs = 3;
 
@@ -242,12 +244,15 @@ namespace Touhou.ExampleSprite
             }
             //Draw score, power, lives, and bombs
             spriteBatch.DrawString(fontfps, "Score: " + score.ToString(), new Vector2(500, 50), Color.White);
+            spriteBatch.DrawString(fontfps, "Player: " + players.ToString(), new Vector2(500, 100), Color.White);
+            spriteBatch.DrawString(fontfps, "Bomb: " + bombs.ToString(), new Vector2(500, 130), Color.White);
             if (power < 128)
-                spriteBatch.DrawString(fontfps, "Power: " + power.ToString(), new Vector2(500, 80), Color.White);
+                spriteBatch.DrawString(fontfps, "Power: " + power.ToString(), new Vector2(500, 180), Color.White);
             else
-                spriteBatch.DrawString(fontfps, "Power: MAX", new Vector2(500, 80), Color.White);
-            spriteBatch.DrawString(fontfps, "Player: " + players.ToString(), new Vector2(500, 120), Color.White);
-            spriteBatch.DrawString(fontfps, "Bomb: " + bombs.ToString(), new Vector2(500, 150), Color.White);
+                spriteBatch.DrawString(fontfps, "Power: MAX", new Vector2(500, 180), Color.White);
+            spriteBatch.DrawString(fontfps, "Point: " + point, new Vector2(500, 230), Color.White);
+            spriteBatch.DrawString(fontfps, "Graze: " + graze, new Vector2(500, 260), Color.White);
+            
 
 
         }
@@ -829,6 +834,7 @@ namespace Touhou.ExampleSprite
         public class Bullet : Sprite
         {
             public float hitRadius;
+            public bool hasGrazed = false;
             //Constructor given angular direction
             public Bullet(Texture2D t, Vector2 p, float a, float s, Color c, drawType ty)
                 : base(t, p, a, s, c, ty) { }
@@ -843,7 +849,13 @@ namespace Touhou.ExampleSprite
             //Check for collisions
             public bool collide()
             {   
-                //Check for bullet collisions with player
+                //Check for bullet graze
+                if (Math.Abs(pos.X - Player.pos.X) < Player.img.dim.X / 2 &&
+                    Math.Abs(pos.Y - Player.pos.Y) < Player.img.dim.Y / 2 &&
+                    Player.status != PlayerStatus.Dead && !hasGrazed && bomb == null)
+                {
+                    hasGrazed = true; graze++; sounds["graze"].play();
+                }
                 if (Math.Sqrt((Player.pos.X - pos.X) * (Player.pos.X - pos.X) +
                     (Player.pos.Y - pos.Y) * (Player.pos.Y - pos.Y)) < 5.0 &&
                     Player.status != PlayerStatus.Dead)
@@ -1063,11 +1075,11 @@ namespace Touhou.ExampleSprite
                         case "itembomb": bombs++; break;
                         case "itemplayer": players++; sounds["1up"].play(); break;
                         case "itempoint":
-                        if (Player.pos.Y < 150)
-                            scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
-                        else scoreTexts.Add(new ScoreText(100000 - (int)Player.pos.Y * 100, pos, Color.White));
+                            point++;
+                            if (Player.pos.Y < 150) scoreTexts.Add(new ScoreText(100000, pos, Color.Yellow));
+                            else scoreTexts.Add(new ScoreText(100000 - (int)Player.pos.Y * 100, pos, Color.White));
                         break;
-                        case "itemstar": scoreTexts.Add(new ScoreText(1000, pos, Color.White)); break;
+                        case "itemstar": scoreTexts.Add(new ScoreText(1000+graze*10, pos, Color.White)); break;
                     }
                     //Return false to indicate item destruction
                     return false;
