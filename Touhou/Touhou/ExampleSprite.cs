@@ -42,11 +42,12 @@ namespace Touhou.ExampleSprite
                             "itempower","itempoint","itemhighpower","itemstar",
                             "itemfullpower","itembomb","itemplayer",
                             "itempowerarrow","itempointarrow","itemhighpowerarrow","itemstararrow",
-                            "itemfullpowerarrow","itembombarrow","itemplayerarrow",
+                            "itemfullpowerarrow","itembombarrow","itemplayerarrow","spellcardtext",
                             "bullet1","bullet2","bomb1",
                             "explode","focus","powerup","bulletexplode","shoot",
                             "foreground","sky",
-                            "textbox","reimu1","reimu2","marisa1","marisa2","marisafly"
+                            "textbox","reimu1","reimu2","marisa1","marisa2","marisafly",
+                            "bg1","bg2",
                             };
         string[] bulletTexFiles = { "explode", "bulletexplode","shoot",
                                       "B1", "B2", "B3", "B4", "B5", "B6", "B7"};
@@ -74,6 +75,7 @@ namespace Touhou.ExampleSprite
         static List<Explosion> explosions = new List<Explosion>();
         static Spellcard spellcard;
         static Bomb bomb;
+        static List<Background> backgrounds = new List<Background>();
         static List<Item> items = new List<Item>();
         static List<ScoreText> scoreTexts = new List<ScoreText>();
         static PowerText powerText;
@@ -172,6 +174,8 @@ namespace Touhou.ExampleSprite
             bossScript1 = new Script(getColoredTexture("B2", Color.Purple), Color.Purple, 0.0f, 100.0f, bossScript1Loops);
             //Starting Reimu texture
             Player.img = reimuTextures[0];
+            //Starting background
+            backgrounds.Add(new Background(textures["sky"], new Vector2(0,30), 1.0f));
             //Set screen boundaries
             screenDim = new Vector2(GraphicsDevice.DisplayMode.Width, GraphicsDevice.DisplayMode.Height);
             foregroundDim = screenDim - gameDim;
@@ -262,7 +266,8 @@ namespace Touhou.ExampleSprite
         double spawnDelay2 = 10.0;
         double spawnDelay3 = 3.0;
         double waveTime = 15.0;
-        int waves = 0;
+        int waves = 10;
+        static double fullPowerTime = -1;
 
         public void spawnEnemies()
         {
@@ -340,10 +345,6 @@ namespace Touhou.ExampleSprite
             }
         }
 
-        static float scrollSpeed = 30.0f;
-        static float scrollPos = 0.0f;
-        static double fullPowerTime = -1;
-
         protected override void Draw(GameTime gameTime)
         {
             //Window data
@@ -352,11 +353,10 @@ namespace Touhou.ExampleSprite
             // Begin drawing sprites
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
             //Draw bg
-            scrollPos += scrollSpeed * (float)dt;
-            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % textures["sky"].Height)), textures["sky"].Bounds,
-                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
-            spriteBatch.Draw(textures["sky"], new Vector2(0.0f, (float)(scrollPos % textures["sky"].Height - textures["sky"].Height)), textures["sky"].Bounds,
-                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
+            if (spellcard != null) 
+                for (int i = 0; i < spellcard.backgrounds.Count; i++) spellcard.backgrounds[i].draw();
+            else
+                for (int i = 0; i < backgrounds.Count; i++) backgrounds[i].draw();
             //Move and draw player bullets
             for (int i = 0; i < pBullets.Count; i++)
             {
@@ -448,7 +448,7 @@ namespace Touhou.ExampleSprite
             drawForeground();
 
             //Draw other text
-            spriteBatch.DrawString(fontfps, fps.ToString(), Vector2.Zero, Color.White);
+            spriteBatch.DrawString(fontfps, fps.ToString(), new Vector2(0,450), Color.White);
             if (fullPowerTime >= 0)
             {
                 fullPowerTime += dt;
@@ -479,8 +479,8 @@ namespace Touhou.ExampleSprite
             public static float firerate2 = 0.5f;
             public static float firedelay1 = 0.0f;
             public static float firedelay2 = 0.0f;
-            public static int fireamount1 = 1;
-            public static int fireamount2 = 0;
+            public static int fireamount1 = 4;
+            public static int fireamount2 = 4;
             public static bool focused = false;
             public static float fAngle = 0.0f;
             public static double bombDelay = -1;
@@ -906,11 +906,8 @@ namespace Touhou.ExampleSprite
                 //Move the sprite
                 pos += dir * speed * (float)dt;
                 //Have the enemy shoot
-                if (conversation == null)
-                {
-                    for (int i = 0; i < scripts.Length; i++)
-                        scripts[i].run(this.pos);
-                }
+                for (int i = 0; i < scripts.Length; i++)
+                    scripts[i].run(this.pos);
                 //Return false if sprite off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
@@ -929,8 +926,8 @@ namespace Touhou.ExampleSprite
                         Math.Abs(pBullets[i].pos.Y - pos.Y) < dim.Y)
                     {
                         //Destroy bullet and damage enemy
-                        health -= 1.0f;
                         pBullets.RemoveAt(i); i--;
+                        if (spellcard == null || spellcard != null && spellcard.time > 3) health -= 1.0f;
                         sounds["damage"].play();
                         if (health <= 0)
                         {
@@ -975,6 +972,24 @@ namespace Touhou.ExampleSprite
                 speed = (float)Math.Sqrt(d.X * d.X + d.Y * d.Y);
                 dim = imgA.dim; color = c;
             }
+            //Update method to move the boss and check for collisions
+            override public bool update()
+            {
+                //Move the sprite
+                pos += dir * speed * (float)dt;
+                //Have the enemy shoot
+                if (conversation == null && spellcard == null)
+                    for (int i = 0; i < scripts.Length; i++) scripts[i].run(boss.pos);
+                if (health < 750 && spellcard == null)
+                    spellcard = new Spellcard("Star Sign", "Radiant Star Crosses", "marisa", 30,
+                    new List<Background> {new Background(textures["bg1"],Vector2.Zero,1.0f),
+                        new Background(textures["bg2"],new Vector2(-50,0),0.99f)},
+                        new Script[] {bossScript1});
+                //Return false if sprite off-screen
+                if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
+                    return false;
+                return true;
+            }
             //Method to make the boss enter the screen
             public void enter()
             {
@@ -996,7 +1011,7 @@ namespace Touhou.ExampleSprite
                         boss.pos + new Vector2(random.Next(-50, 50), random.Next(-50, 50)), -1.5f));
                 }
                 items.Add(new Item("itemplayer", boss.pos, -1.5f));
-                boss = null;
+                boss = null; spellcard = null;
             }
         }
         public class Item : Sprite
@@ -1188,30 +1203,57 @@ namespace Touhou.ExampleSprite
 
         public class Spellcard
         {
-            string type;
-            string name;
-            string owner;
-            double time = 0.0;
-            double totalTime;
-            public Spellcard(string t, string n, string o, double ti)
+            public string type;
+            public string name;
+            public string owner;
+            public Script[] scripts;
+            public List<Background> backgrounds;
+            public double time = 0.0;
+            public double totalTime;
+            public Spellcard(string t, string n, string o, double ti, List<Background> b, Script[] scr)
             {
-                type = t; name = n; owner = o; totalTime = ti;
+                type = t; name = n; owner = o; totalTime = ti; scripts = scr; backgrounds = b;
                 sounds["spellcard"].play();
                 if (owner == Player.name)
                     explosions.Add(new Explosion("explode", Player.pos, 5.0f, 0.33f, 3.0f, Color.White));
+                else
+                    explosions.Add(new Explosion("explode", boss.pos, 5.0f, 0.33f, 3.0f, Color.White));
                 for (int i = 0; i < items.Count; i++)
                 {
                     items[i].autoCollect = true;
                 }
+                if (owner != Player.name)
+                    for (int i = 0; i < eBullets.Count; i++)
+                    {
+                        items.Add(new Item("itemstar", eBullets[i].pos, 0));
+                        eBullets.RemoveAt(i); i--;
+                    }
             }
-            public bool update()
+            virtual public bool update()
             {
                 time += dt;
                 if (time < 3)
-                    spriteBatch.Draw(textures[owner + "2"], new Vector2(50, gameDim.Y-textures[owner+"2"].Height),
-                        textures[owner + "2"].Bounds,Color.White, 0.0f, Vector2.Zero,
-                        MathHelper.Clamp(1.5f-(float)time, 1.0f, 2.0f),SpriteEffects.None, 0.01f);
-                spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(50, 460), Color.Red);
+                {
+                    new Vector2(gameDim.X - 50 - textures[owner + "2"].Width,
+                       gameDim.Y - textures[owner + "2"].Height);
+                    spriteBatch.Draw(textures[owner + "2"], new Vector2(50, gameDim.Y - textures[owner + "2"].Height),
+                        textures[owner + "2"].Bounds, Color.White, 0.0f, Vector2.Zero,
+                        MathHelper.Clamp(1.5f - (float)time, 1.0f, 2.0f), SpriteEffects.None, 0.02f);
+                    spriteBatch.Draw(textures["spellcardtext"], new Vector2(100,200),
+                        textures["spellcardtext"].Bounds, Color.White, 0.0f, Vector2.Zero,
+                        1.0f, SpriteEffects.None, 0.01f);
+                    spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(100, 200), Color.White);
+                }
+                else
+                {
+                    for (int i = 0; i < scripts.Length; i++) scripts[i].run(boss.pos);
+                    spriteBatch.Draw(textures["spellcardtext"], new Vector2(10, 30),
+                        textures["spellcardtext"].Bounds, Color.White, 0.0f, Vector2.Zero,
+                        1.0f, SpriteEffects.None, 0.01f);
+                    spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(20, 30), Color.White);
+                }
+                spriteBatch.DrawString(fontfps, Math.Ceiling(totalTime - time).ToString(),
+                    new Vector2(gameDim.X - 20, 0), Color.SkyBlue);
                 if (time > totalTime) return false;
                 return true;
             }
@@ -1220,7 +1262,7 @@ namespace Touhou.ExampleSprite
         {
             int script;
             public Bomb(string t, string n, string o, double ti, int scr)
-                : base(t, n, o, ti)
+                : base(t, n, o, ti, null, null)
             {
                 script = scr;
                 switch (scr)
@@ -1231,6 +1273,18 @@ namespace Touhou.ExampleSprite
                                 drawType.Normal, 0.5f, 8.0f));
                         break;
                 }
+            }
+            override public bool update()
+            {
+                time += dt;
+                if (time < 3)
+                    spriteBatch.Draw(textures[owner + "2"], new Vector2(gameDim.X - 50 - textures[owner + "2"].Width,
+                       gameDim.Y - textures[owner + "2"].Height),
+                        textures[owner + "2"].Bounds, Color.White, 0.0f, Vector2.Zero,
+                        MathHelper.Clamp(1.5f - (float)time, 1.0f, 2.0f), SpriteEffects.None, 0.01f);
+                spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(50, 460), Color.Red);
+                if (time > totalTime) return false;
+                return true;
             }
         }
         
@@ -1339,7 +1393,9 @@ namespace Touhou.ExampleSprite
                     string[] command = conv[line].Substring(1).Split(':');
                     if (command[0] == "Music") MediaPlayer.Play(songs[command[1]]);
                     if (command[0] == "Enter") Boss.isEntering = true;
-                    if (command[0] == "Speed") scrollSpeed = Convert.ToInt32(command[1]);
+                    if (command[0] == "Speed")
+                        for (int i = 0; i < backgrounds.Count; i++)
+                            backgrounds[i].scrollDir *= Convert.ToInt32(command[1]);
                     Console.WriteLine(conv[line].Substring(1)); line++; this.showConv(); return true;
                 }
                 else
@@ -1489,6 +1545,28 @@ namespace Touhou.ExampleSprite
             }
         }
 
+        public class Background
+        {
+            public Texture2D img;
+            public Vector2 scrollDir;
+            public Vector2 scrollPos;
+            public float layer;
+            public Background(Texture2D i, Vector2 sd, float l)
+            {
+                scrollDir = sd; img = i; layer = l;
+            }
+            public void draw()
+            {
+                scrollPos += scrollDir * (float)dt;
+                scrollPos = new Vector2(scrollPos.X % img.Width, scrollPos.Y % img.Height);
+                if (scrollPos.X > 0) scrollPos.X -= img.Width;
+                if (scrollPos.Y > 0) scrollPos.Y -= img.Height;
+                for (int x = (int)scrollPos.X; x < gameDim.X; x += img.Width)
+                    for (int y = (int)scrollPos.Y; y < gameDim.Y; y += img.Height)
+                        spriteBatch.Draw(img, new Vector2(x,y), img.Bounds,
+                        Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, layer);
+            }
+        }
         
 
         public class AnimatedTexture
