@@ -44,11 +44,11 @@ namespace Touhou.ExampleSprite
                             "itempowerarrow","itempointarrow","itemhighpowerarrow","itemstararrow",
                             "itemfullpowerarrow","itembombarrow","itemplayerarrow",
                             "bullet1","bullet2","bomb1",
-                            "explode","focus","powerup","bulletexplode",
+                            "explode","focus","powerup","bulletexplode","shoot",
                             "foreground","sky",
                             "textbox","reimu1","reimu2","marisa1","marisa2","marisafly"
                             };
-        string[] bulletTexFiles = { "explode", "bulletexplode",
+        string[] bulletTexFiles = { "explode", "bulletexplode","shoot",
                                       "B1", "B2", "B3", "B4", "B5", "B6", "B7"};
         string[] soundFiles = { "death","graze",
                                   "enemyshoot1","enemyshoot2","enemyshoot3",
@@ -1419,6 +1419,8 @@ namespace Touhou.ExampleSprite
                                 eBullets.Add(new Bullet(img,
                                 sourcePos, angle, speed, color, drawType.Directional));
                                 sounds["enemyshoot3"].play();
+                                explosions.Add(new Explosion("shoot", sourcePos,
+                                    -1.0f, 0.0f, 0.3f, color));
                             }
                             else
                             {
