@@ -264,7 +264,7 @@ namespace Touhou.ExampleSprite
         double spawnDelay2 = 10.0;
         double spawnDelay3 = 3.0;
         double waveTime = 15.0;
-        int waves = 10;
+        int waves = 0;
         static double fullPowerTime = -1;
 
         public void spawnEnemies()
