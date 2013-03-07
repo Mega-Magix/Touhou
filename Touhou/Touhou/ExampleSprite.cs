@@ -50,7 +50,7 @@ namespace Touhou.ExampleSprite
                             "bg1","bg2",
                             };
         string[] bulletTexFiles = { "explode", "bulletexplode","shoot",
-                                      "B1", "B2", "B3", "B4", "B5", "B6", "B7"};
+                                      "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8"};
         string[] soundFiles = { "death","graze",
                                   "enemyshoot1","enemyshoot2","enemyshoot3",
                                   "explodesound", "playershoot", "item", "damage",
@@ -107,13 +107,10 @@ namespace Touhou.ExampleSprite
 
         //Boss data
         static Boss boss;
-        static Loop[] bossScript1Loops = new Loop[2];
         static Script bossScript1;
-        static Loop[] enemyScript1Loops = new Loop[1];
+        static Script[] bossScript2;
         static Script enemyScript1;
-        static Loop[] enemyScript2Loops = new Loop[2];
         static Script enemyScript2;
-        static Loop[,] enemyScript3Loops = new Loop[2, 2];
         static Script[] enemyScript3;
 
         protected override void LoadContent()
@@ -159,19 +156,20 @@ namespace Touhou.ExampleSprite
             //Load boss data
             bossTexture = new AnimatedTexture(textures["marisafly"], 4, 0.3);
             //Load scripts
-            enemyScript1Loops[0] = new Loop(1000, 1.0, 0, 0.0);
-            enemyScript1 = new Script(getColoredTexture("B1", Color.Red), Color.Red, 0.0f, 100.0f, enemyScript1Loops);
-            enemyScript2Loops[0] = new Loop(10, 0.5, 1, 0.0);
-            enemyScript2Loops[1] = new Loop(5, 0.0, 2, 0.0);
-            enemyScript2 = new Script(getColoredTexture("B2", Color.Blue), Color.Blue, 0.0f, 100.0f, enemyScript2Loops);
-            enemyScript3Loops[0,0] = new Loop(20, 1.0, 3, 0.0);
-            enemyScript3Loops[0,1] = new Loop(20, 0.0, 4, 0.0);
-            enemyScript3Loops[1,0] = new Loop(500, 0.02, 5, 0.0);
-            enemyScript3 = new Script[]{new Script(getColoredTexture("B3", Color.Green), Color.Green, 0.0f, 150.0f, new Loop[] {enemyScript3Loops[0,0], enemyScript3Loops[0,1]}),
-                                        new Script(getColoredTexture("B4",Color.Yellow), Color.Yellow, 0.0f, 100.0f, new Loop[] {enemyScript3Loops[1,0]})};
-            bossScript1Loops[0] = new Loop(1000, 0.5, 6, 0.0);
-            bossScript1Loops[1] = new Loop(20, 0.0, 7, 0.0);
-            bossScript1 = new Script(getColoredTexture("B2", Color.Purple), Color.Purple, 0.0f, 100.0f, bossScript1Loops);
+            enemyScript1 = new Script(getColoredTexture("B1", Color.Red), Color.Red, drawType.Normal, 0.0f, 100.0f,
+                new Loop[] {new Loop(1000, 1.0, 0)});
+            enemyScript2 = new Script(getColoredTexture("B2", Color.Blue), Color.Blue, drawType.Directional, 0.0f, 100.0f,
+                new Loop[] {new Loop(10, 0.5, 1), new Loop(5, 0.0, 2)});
+            enemyScript3 = new Script[]{new Script(getColoredTexture("B3", Color.Green), Color.Green, drawType.Normal, 0.0f, 150.0f,
+                new Loop[] {new Loop(20, 1.0, 3), new Loop(20, 0.0, 4)}),
+                                        new Script(getColoredTexture("B4",Color.Yellow), Color.Yellow, drawType.Directional, 0.0f, 100.0f,
+                new Loop[] {new Loop(500, 0.02, 5)})};
+            bossScript1 = new Script(getColoredTexture("B2", Color.Purple), Color.Purple, drawType.Directional, 0.0f, 100.0f,
+                new Loop[] {new Loop(1000, 0.5, 6), new Loop(20, 0.0, 7) });
+            bossScript2 = new Script[]{new Script(getColoredTexture("B2", Color.Yellow), Color.Yellow, drawType.Directional, 0.0f, 100.0f,
+                new Loop[] {new Loop(1000, 0.5, 8), new Loop(6, 0, 9)}),
+                                        new Script(getColoredTexture("B8", Color.Yellow), Color.Yellow, drawType.Spinning, 0.0f, 20.0f, 
+                new Loop[] {new Loop(1000, 10.0, 10), new Loop(6, 0.5, 11), new Loop(15, 0.1, 12)})};
             //Starting Reimu texture
             Player.img = reimuTextures[0];
             //Starting background
@@ -266,7 +264,7 @@ namespace Touhou.ExampleSprite
         double spawnDelay2 = 10.0;
         double spawnDelay3 = 3.0;
         double waveTime = 15.0;
-        int waves = 0;
+        int waves = 10;
         static double fullPowerTime = -1;
 
         public void spawnEnemies()
@@ -736,6 +734,7 @@ namespace Touhou.ExampleSprite
             public float radians;
             public Color color;
             public drawType type;
+            public float spinAngle;
             public Sprite(Texture2D t, Vector2 p, float a, float s, Color c, drawType ty)
             {
                 img = t; pos = p; angle = a - 90.0f; speed = s; type = ty;
@@ -800,6 +799,12 @@ namespace Touhou.ExampleSprite
                         spriteBatch.Draw(imgA.img, pos, imgA.getFrame(),
                         Color.White, MathHelper.ToRadians(angle + 90.0f), dim / 2, 1.0f,
                         SpriteEffects.None, layer);
+                        break;
+                    case drawType.Spinning:
+                        spriteBatch.Draw(img, pos, img.Bounds,
+                        Color.White, spinAngle, dim / 2, 1.0f,
+                        SpriteEffects.None, layer);
+                        spinAngle += 0.05f;
                         break;
                 }
             }
@@ -983,8 +988,7 @@ namespace Touhou.ExampleSprite
                 if (health < 750 && spellcard == null)
                     spellcard = new Spellcard("Star Sign", "Radiant Star Crosses", "marisa", 60,
                     new List<Background> {new Background(textures["bg1"],Vector2.Zero,1.0f),
-                        new Background(textures["bg2"],new Vector2(-50,0),0.99f)},
-                        new Script[] {bossScript1});
+                        new Background(textures["bg2"],new Vector2(-50,0),0.99f)}, bossScript2);
                 //Return false if sprite off-screen
                 if (pos.X < -50 || pos.X > gameDim.X + 50 || pos.Y < -50 || pos.Y > gameDim.Y + 50)
                     return false;
@@ -1012,6 +1016,11 @@ namespace Touhou.ExampleSprite
                 }
                 items.Add(new Item("itemplayer", boss.pos, -1.5f));
                 boss = null; spellcard = null;
+                for (int i = 0; i < eBullets.Count; i++)
+                {
+                    items.Add(new Item("itemstar", eBullets[i].pos, 0));
+                    eBullets.RemoveAt(i); i--;
+                }
             }
         }
         public class Item : Sprite
@@ -1282,7 +1291,7 @@ namespace Touhou.ExampleSprite
                        gameDim.Y - textures[owner + "2"].Height),
                         textures[owner + "2"].Bounds, Color.White, 0.0f, Vector2.Zero,
                         MathHelper.Clamp(1.5f - (float)time, 1.0f, 2.0f), SpriteEffects.None, 0.01f);
-                spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(50, 460), Color.Red);
+                spriteBatch.DrawString(fontconv, type + " \"" + name + "\"", new Vector2(50, 460), Color.Crimson);
                 if (time > totalTime) return false;
                 return true;
             }
@@ -1443,22 +1452,24 @@ namespace Touhou.ExampleSprite
         {
             public Texture2D img = textures["bullet1"];
             public Color color;
+            public drawType type;
             public float angle;
             public float speed;
             public double time = 0.0;
             public Loop[] loopData;
             public List<Loop> loops = new List<Loop>();
-            public Script(Texture2D i, Color c, float a, float s, Loop[] l)
+            public Script(Texture2D i, Color c, drawType t, float a, float s, Loop[] l)
             {
-                img = i; speed = s; angle = a; color = c;
+                img = i; speed = s; angle = a; color = c; type = t;
                 loopData = l; loops.Add(new Loop(loopData[0].totalLoops, loopData[0].loopDelay,
-                                  loopData[0].loopScript, 0.0));
+                                  loopData[0].loopScript, angle, speed, 0));
+                
             }
             public Script(Script s)
             {
-                img = s.img; speed = s.speed; angle = s.angle; color = s.color;
+                img = s.img; speed = s.speed; angle = s.angle; color = s.color; type = s.type;
                 loopData = s.loopData; loops.Add(new Loop(loopData[0].totalLoops, loopData[0].loopDelay,
-                                  loopData[0].loopScript, 0.0));
+                                  loopData[0].loopScript, angle, speed, 0));
             }
             public void run(Vector2 sourcePos)
             {
@@ -1467,13 +1478,13 @@ namespace Touhou.ExampleSprite
                     int loopLevel = loops[i].loopScript - loopData[0].loopScript;
                     if (time >= loops[i].nextLoopTime)
                     {
-                        if (loops[i].run(this,sourcePos))
+                        if (loops[i].run(sourcePos))
                         {
                             loops[i].nextLoopTime = loops[i].loopDelay + time;
                             if (loopLevel >= loopData.Length - 1)
                             {
                                 eBullets.Add(new Bullet(img,
-                                sourcePos, angle, speed, color, drawType.Directional));
+                                sourcePos, loops[i].angle, loops[i].speed, color, type));
                                 sounds["enemyshoot3"].play();
                                 explosions.Add(new Explosion("shoot", sourcePos,
                                     -1.0f, 0.0f, 0.3f, color));
@@ -1482,7 +1493,8 @@ namespace Touhou.ExampleSprite
                             {
                                 loops.Add(new Loop(loopData[loopLevel + 1].totalLoops,
                                     loopData[loopLevel + 1].loopDelay,
-                                   loopData[loopLevel + 1].loopScript, time));
+                                   loopData[loopLevel + 1].loopScript,
+                                   loops[i].angle, loops[i].speed, loops[i].loopNum));
                             }
                             i--;
                             
@@ -1497,49 +1509,51 @@ namespace Touhou.ExampleSprite
         public class Loop
         {
             public int totalLoops;
-            public int loopNum;
+            public int loopNum = 0;
             public double loopDelay;
             public double nextLoopTime;
             public int loopScript;
-            public Loop(int tLoops, double lDelay, int lScript, double time)
+            public float angle;
+            public float speed;
+            public float variable;
+            public int prevLoopNum;
+            public Loop(int tLoops, double lDelay, int lScript, float a, float s, int pn)
             {
-                totalLoops = tLoops; loopDelay = lDelay; loopScript = lScript; loopNum = 0;
+                totalLoops = tLoops; loopDelay = lDelay; loopScript = lScript;
+                angle = a; speed = s; prevLoopNum = pn;
             }
-            public bool run(Script script, Vector2 sourcePos)
+            public Loop(int tLoops, double lDelay, int lScript)
+            {
+                totalLoops = tLoops; loopDelay = lDelay; loopScript = lScript;
+            }
+            public bool run(Vector2 sourcePos)
             {
                 if (loopNum >= totalLoops) return false;
-                if (loopNum > 0) runScript(script, sourcePos);
+                if (loopNum > 0) runScript(sourcePos);
                 loopNum++;
                 return true;
                 
             }
-            public void runScript(Script script, Vector2 sourcePos)
+            public void runScript(Vector2 sourcePos)
             {
                 switch (loopScript)
                 {
-                    case 0:
-                        script.angle = (float)random.NextDouble() * 360.0f;
-                        break;
-                    case 1:
-                        script.angle = Player.getAngle(sourcePos) - 60.0f;
-                        break;
-                    case 2:
-                        script.angle += 30.0f;
-                        break;
-                    case 3:
-                        script.angle = (float)random.NextDouble() * 360.0f;
-                        break;
-                    case 4:
-                        script.angle += 18.0f;
-                        break;
-                    case 5:
-                        script.angle = (float)random.NextDouble() * 360.0f;
-                        script.speed = (float)random.Next(50,100);
-                        break;
+                    case 0: angle = (float)random.NextDouble() * 360.0f; break;
+                    case 1: angle = Player.getAngle(sourcePos) - 60.0f; break;
+                    case 2: angle += 30.0f; break;
+                    case 3: angle = (float)random.NextDouble() * 360.0f; break;
+                    case 4: angle += 18.0f; break;
+                    case 5: angle = (float)random.NextDouble() * 360.0f;
+                        speed = (float)random.Next(50,100); break;
                     case 6: break;
-                    case 7:
-                        script.angle = (float)random.NextDouble() * 360.0f;
-                        break;
+                    case 7: angle = (float)random.NextDouble() * 360.0f; break;
+                    case 8: angle += 5.0f; break;
+                    case 9: angle += 60.0f; break;
+                    case 10: angle = Player.getAngle(sourcePos); speed = 20.0f; break;
+                    case 11: angle = Player.getAngle(sourcePos) + new float[]{-30.0f,30.0f}[loopNum % 2];
+                        speed = 20.0f; break;
+                    case 12: angle += new float[]{-8.0f, 8.0f}[prevLoopNum % 2];
+                        speed += 10.0f; break;
                     
                 }
             }
