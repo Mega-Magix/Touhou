@@ -63,7 +63,7 @@ namespace Touhou.Battle
             }
             set
             {
-                this.velocity = Velocity;
+                this.velocity = value;
                 // Calculate the traveling angle of the velocity.
                 this.angle = MathHelper.ToDegrees((float)Math.Atan2(velocity.Y, velocity.X)) + 90.0f;
                 // Use the Pythagorean theorum to calculate the speed in the given velocity.
@@ -79,7 +79,7 @@ namespace Touhou.Battle
             }
             set
             {
-                this.angle = Angle;
+                this.angle = value;
                 float radians;
                 radians = MathHelper.ToRadians(this.angle - 90.0f);
 
@@ -99,7 +99,7 @@ namespace Touhou.Battle
             set
             {
                 // Set new speed to bullet
-                this.speed = Speed;
+                this.speed = value;
                 // Set angle equal to itself to velocity values
                 this.Angle = this.angle;
             }

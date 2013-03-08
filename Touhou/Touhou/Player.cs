@@ -50,6 +50,7 @@ namespace Touhou.Battle
         const float flashDelay = .25f;
         const float playerRespawnFlashAlpha = .5f;
 
+        // ISSUE Player is not positioning at the beginning
         public Player(Game game, Level level)
         {
 
@@ -74,15 +75,49 @@ namespace Touhou.Battle
 
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
 
+            this.X = level.width / 2;
+            this.Y = level.height / 2;
+
         }
 
         public float GetCenterX()
         {
             return position.X + animation.width / 2;
         }
+        public void SetCenterX(float posx)
+        {
+            position.X = posx - animation.width / 2;
+        }
         public float GetCenterY()
         {
             return position.Y + animation.height / 2;
+        }
+        public void SetCenterY(float posy)
+        {
+            position.Y = posy - animation.height / 2;
+        }
+
+        public float X
+        {
+            get
+            {
+                return GetCenterX();
+            }
+            set
+            {
+                SetCenterX(value);
+            }
+        }
+        public float Y
+        {
+            get
+            {
+                return GetCenterY();
+            }
+            set
+            {
+                SetCenterY(value);
+            }
         }
 
         public void SetTransparency(float alpha)
@@ -114,7 +149,11 @@ namespace Touhou.Battle
             killWait = 0.0f;
             respawnWait = respawnDelay;
             SetTransparency(playerRespawnFlashAlpha);
+            // ISSUE X and Y is not setting on respawn
             flashWait = flashDelay;
+
+            this.X = level.width / 2;
+            this.Y = level.height / 2;
         }
 
         public void Shoot()

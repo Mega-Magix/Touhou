@@ -26,8 +26,11 @@ namespace Touhou.Battle
 
         List<SoundManager> soundManagers = new List<SoundManager>();
 
-        public int width;
-        public int height;
+        public int screenWidth;
+        public int screenHeight;
+
+        public int width = 420;
+        public int height = 480;
 
         List<Bullet> playerBullets = new List<Bullet>();
         List<Bullet> enemyBullets = new List<Bullet>();
@@ -59,8 +62,8 @@ namespace Touhou.Battle
             // Start playing level music
             // MediaPlayer.Play(music);
 
-            width = game.gameWidth;
-            height = game.gameHeight;
+            screenWidth = game.gameWidth;
+            screenHeight = game.gameHeight;
         }
         
         public void AddBullet(Bullet newBullet, BulletSet bulletSet)
@@ -137,8 +140,8 @@ namespace Touhou.Battle
                 bullet.Update(dt);
 
                 // Remove any off-screen bullets
-                if (bullet.position.X < 0 || bullet.position.X > width
-                    || bullet.position.Y < 0 || bullet.position.Y > height)
+                if (bullet.position.X < 0 || bullet.position.X > screenWidth
+                    || bullet.position.Y < 0 || bullet.position.Y > screenHeight)
                 {
                     playerBullets.RemoveAt(i);
                     i--;
@@ -178,8 +181,8 @@ namespace Touhou.Battle
                 bullet.Update(dt);
 
                 // Remove any off-screen bullets
-                if (bullet.position.X < 0 || bullet.position.X > width
-                    || bullet.position.Y < 0 || bullet.position.Y > height)
+                if (bullet.position.X < 0 || bullet.position.X > screenWidth
+                    || bullet.position.Y < 0 || bullet.position.Y > screenHeight)
                 {
                     enemyBullets.RemoveAt(i);
                     i--;

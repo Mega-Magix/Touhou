@@ -78,7 +78,7 @@ namespace Touhou.Battle
             animation.position = position;
             animation.Update(dt);
 
-            if (position.Y >= level.height)
+            if (position.Y >= level.screenHeight)
                 Destroy();
         }
     }
