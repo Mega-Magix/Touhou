@@ -43,11 +43,12 @@ namespace Touhou.Battle
         SoundEffect soundShoot;
 
         float killWait = 0.0f;
-        float killDelay = 1.0f;
+        const float killDelay = 1.0f;
         float respawnWait = 0.0f;
-        float respawnDelay = 2.0f;
+        const float respawnDelay = 2.0f;
         float flashWait = 0.0f;
-        float flashDelay = .25f;
+        const float flashDelay = .25f;
+        const float playerRespawnFlashAlpha = .5f;
 
         public Player(Game game, Level level)
         {
@@ -91,7 +92,7 @@ namespace Touhou.Battle
         public void ToggleTransparency()
         {
             if (animation.alpha == 1.0f)
-                SetTransparency(.5f);
+                SetTransparency(playerRespawnFlashAlpha);
             else
                 SetTransparency(1.0f);
         }
@@ -112,7 +113,7 @@ namespace Touhou.Battle
         {
             killWait = 0.0f;
             respawnWait = respawnDelay;
-            SetTransparency(.5f);
+            SetTransparency(playerRespawnFlashAlpha);
             flashWait = flashDelay;
         }
 
@@ -129,14 +130,17 @@ namespace Touhou.Battle
 
         public void Update(float dt, KeyboardState keystate)
         {
+            // If player is killed
             if (killWait > 0.0f)
             {
                 killWait -= dt;
                 if (killWait <= 0.0f)
                     Respawn();
             }
+            // If player is respawning
             if (respawnWait > 0.0f)
             {
+                // PLayer is between respawn flashes
                 if (flashWait > 0.0f)
                     flashWait -= dt;
                 else
