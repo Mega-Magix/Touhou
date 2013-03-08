@@ -113,8 +113,8 @@ namespace Touhou.Battle
 
                 // Find the distance of the enemy from the player
                 double distance = Math.Sqrt(
-                    (player.GetCenterX() - enemy.getCenterX()) * (player.GetCenterX() - enemy.getCenterX()) +
-                    (player.GetCenterY() - enemy.getCenterY()) * (player.GetCenterY() - enemy.getCenterY())
+                    (player.GetCenterX() - enemy.GetCenterX()) * (player.GetCenterX() - enemy.GetCenterX()) +
+                    (player.GetCenterY() - enemy.GetCenterY()) * (player.GetCenterY() - enemy.GetCenterY())
                     );
 
                 if (distance <= enemy.radius + player.radius)
@@ -152,8 +152,8 @@ namespace Touhou.Battle
                         enemy = enemies[ii];
                         // Find the distance from the bullet point to the center of the enemy circle
                         double distance = Math.Sqrt(
-                            (bullet.position.X - enemy.getCenterX()) * (bullet.position.X - enemy.getCenterX()) +
-                            (bullet.position.Y - enemy.getCenterY()) * (bullet.position.Y - enemy.getCenterY())
+                            (bullet.position.X - enemy.GetCenterX()) * (bullet.position.X - enemy.GetCenterX()) +
+                            (bullet.position.Y - enemy.GetCenterY()) * (bullet.position.Y - enemy.GetCenterY())
                             );
 
                         if (distance <= enemy.radius + bullet.radius)

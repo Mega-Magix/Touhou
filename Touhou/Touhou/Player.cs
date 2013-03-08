@@ -149,6 +149,9 @@ namespace Touhou.Battle
                     flashWait = flashDelay;
                 }
                 respawnWait -= dt;
+                if (respawnWait <= 0.0f)
+                    // Player just finished respawning
+                    SetTransparency(1.0f);
             }
 
             if (!IsKilled())

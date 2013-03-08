@@ -174,7 +174,7 @@ namespace Touhou
             instance1 = s.CreateInstance();
             instance2 = s.CreateInstance();
         }
-        public void play()
+        public void Play()
         {
             if (!isPlaying)
             {

@@ -48,11 +48,11 @@ namespace Touhou.Battle
             animation = new Effect.AnimatedTexture(animationTexture, position, 4, 0.2);
         }
 
-        public float getCenterX()
+        public float GetCenterX()
         {
             return position.X + animation.width / 2;
         }
-        public float getCenterY()
+        public float GetCenterY()
         {
             return position.Y + animation.height / 2;
         }
@@ -62,7 +62,7 @@ namespace Touhou.Battle
             health -= bullet.damage;
             if (health <= 0)
             {
-                Effect.Explosion explosion = new Effect.Explosion(game, "explodeblue", getCenterX(), getCenterY(), 2.0f, 0.5f);
+                Effect.Explosion explosion = new Effect.Explosion(game, "explodeblue", GetCenterX(), GetCenterY(), 2.0f, 0.5f);
                 level.AddExplosion(explosion);
                 Destroy();
             }
