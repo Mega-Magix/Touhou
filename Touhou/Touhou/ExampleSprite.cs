@@ -226,7 +226,7 @@ namespace Touhou.ExampleSprite
                 enemies.Add(boss);
             }
             //Move and draw sprites
-            this.Draw(gameTime);
+            Draw(gameTime);
             //Move boss
             if (boss != null && Boss.isEntering) boss.enter();
 
@@ -264,7 +264,7 @@ namespace Touhou.ExampleSprite
         double spawnDelay2 = 10.0;
         double spawnDelay3 = 3.0;
         double waveTime = 15.0;
-        int waves = 0;
+        int waves = 10;
         static double fullPowerTime = -1;
 
         public void spawnEnemies()
@@ -458,7 +458,7 @@ namespace Touhou.ExampleSprite
 
             //End drawing sprites
             spriteBatch.End();
-            base.Draw(gameTime);
+            //base.Draw(gameTime);
         }
 
 
@@ -691,6 +691,11 @@ namespace Touhou.ExampleSprite
                     }
                 }
             }
+        }
+
+        public class Level
+        {
+
         }
 
         public class SoundManager
