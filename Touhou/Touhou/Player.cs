@@ -46,6 +46,8 @@ namespace Touhou.Battle
         float killDelay = 1.0f;
         float respawnWait = 0.0f;
         float respawnDelay = 2.0f;
+        float flashWait = 0.0f;
+        float flashDelay = .25f;
 
         public Player(Game game, Level level)
         {
@@ -82,14 +84,26 @@ namespace Touhou.Battle
             return position.Y + animation.height / 2;
         }
 
-        public bool isKilled() { return (this.killWait > 0.0f); }
-        public bool isRespawning() { return (this.respawnWait > 0.0f); }
+        public void SetTransparency(float alpha)
+        {
+            animation.alpha = alpha;
+        }
+        public void ToggleTransparency()
+        {
+            if (animation.alpha == 1.0f)
+                SetTransparency(.5f);
+            else
+                SetTransparency(1.0f);
+        }
+
+        public bool IsKilled() { return (this.killWait > 0.0f); }
+        public bool IsResponding() { return (this.respawnWait > 0.0f); }
 
         public void Kill()
         {
             // You can't already be killed or respawning
             // and kill the player
-            if (!isKilled() && !isRespawning())
+            if (!IsKilled() && !IsResponding())
             {
                 killWait = killDelay;
             }
@@ -98,6 +112,8 @@ namespace Touhou.Battle
         {
             killWait = 0.0f;
             respawnWait = respawnDelay;
+            SetTransparency(.5f);
+            flashWait = flashDelay;
         }
 
         public void Shoot()
@@ -120,9 +136,18 @@ namespace Touhou.Battle
                     Respawn();
             }
             if (respawnWait > 0.0f)
+            {
+                if (flashWait > 0.0f)
+                    flashWait -= dt;
+                else
+                {
+                    ToggleTransparency();
+                    flashWait = flashDelay;
+                }
                 respawnWait -= dt;
+            }
 
-            if (!isKilled())
+            if (!IsKilled())
             {
 
                 oldDX = velocity.X;

@@ -224,7 +224,7 @@ namespace Touhou.Battle
                 Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
 
             // Draw the player sprite
-            if (!player.isKilled())
+            if (!player.IsKilled())
                 player.animation.Draw(spriteBatch);
 
             //Draw each explosion on the screen

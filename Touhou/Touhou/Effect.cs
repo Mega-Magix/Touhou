@@ -35,7 +35,7 @@ namespace Touhou.Battle.Effect
         Vector2 textureVector;
         Rectangle textureRectangle;
 
-        public Boolean destroyed = false;
+        public bool destroyed = false;
 
         public Explosion(Game game, String texture, float x, float y, float expansion, float lifetime)
         {
@@ -82,6 +82,8 @@ namespace Touhou.Battle.Effect
 
         public int width;
         public int height;
+
+        public float alpha = 1.0f;
 
         public int numFrames;
         public int frame = 0;
@@ -162,7 +164,7 @@ namespace Touhou.Battle.Effect
 
         public void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, position, rectangle, Color.White);
+            spriteBatch.Draw(texture, position, rectangle, Color.White * alpha);
         }
 
         public void Update(double dt)
