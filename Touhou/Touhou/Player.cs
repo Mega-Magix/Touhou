@@ -45,7 +45,7 @@ namespace Touhou.Battle
         float killWait = 0.0f;
         const float killDelay = 1.0f;
         float respawnWait = 0.0f;
-        const float respawnDelay = 2.0f;
+        const float respawnDelay = 3.0f;
         float flashWait = 0.0f;
         const float flashDelay = .25f;
         const float playerRespawnFlashAlpha = .5f;
