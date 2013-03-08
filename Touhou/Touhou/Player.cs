@@ -75,8 +75,8 @@ namespace Touhou.Battle
 
             bulletTexture = game.Content.Load<Texture2D>("bullet1");
 
-            this.X = level.width / 2;
-            this.Y = level.height / 2;
+            X = level.width / 2;
+            Y = level.height / 2;
 
         }
 
@@ -152,8 +152,8 @@ namespace Touhou.Battle
             // ISSUE X and Y is not setting on respawn
             flashWait = flashDelay;
 
-            this.X = level.width / 2;
-            this.Y = level.height / 2;
+            X = level.width / 2;
+            Y = level.height / 2;
         }
 
         public void Shoot()
