@@ -63,18 +63,18 @@ namespace Touhou.Battle
             height = game.gameHeight;
         }
         
-        public void addBullet(Bullet newBullet, BulletSet bulletSet)
+        public void AddBullet(Bullet newBullet, BulletSet bulletSet)
         {
             if (bulletSet == BulletSet.Enemy)
                 enemyBullets.Add(newBullet);
             else if (bulletSet == BulletSet.Player)
                 playerBullets.Add(newBullet);
         }
-        public void addEnemy(Enemy enemy)
+        public void AddEnemy(Enemy enemy)
         {
             enemies.Add(enemy);
         }
-        public void addExplosion(Effect.Explosion explosion)
+        public void AddExplosion(Effect.Explosion explosion)
         {
             explosions.Add(explosion);
         }
@@ -113,8 +113,8 @@ namespace Touhou.Battle
 
                 // Find the distance of the enemy from the player
                 double distance = Math.Sqrt(
-                    (player.getCenterX() - enemy.getCenterX()) * (player.getCenterX() - enemy.getCenterX()) +
-                    (player.getCenterY() - enemy.getCenterY()) * (player.getCenterY() - enemy.getCenterY())
+                    (player.GetCenterX() - enemy.getCenterX()) * (player.GetCenterX() - enemy.getCenterX()) +
+                    (player.GetCenterY() - enemy.getCenterY()) * (player.GetCenterY() - enemy.getCenterY())
                     );
 
                 if (distance <= enemy.radius + player.radius)
@@ -189,8 +189,8 @@ namespace Touhou.Battle
                 {
                     // Check each enemy bullet for collision with the game player
                     double distance = Math.Sqrt(
-                        (bullet.position.X - player.getCenterX()) * (bullet.position.X - player.getCenterX()) +
-                        (bullet.position.Y - player.getCenterY()) * (bullet.position.Y - player.getCenterY())
+                        (bullet.position.X - player.GetCenterX()) * (bullet.position.X - player.GetCenterX()) +
+                        (bullet.position.Y - player.GetCenterY()) * (bullet.position.Y - player.GetCenterY())
                         );
 
                     if (distance <= player.radius + bullet.radius)
@@ -206,13 +206,12 @@ namespace Touhou.Battle
             if (newEnemyWait <= newEnemyDelay)
             {
                 newEnemyWait += newEnemyDelay;
-                addEnemy(new Enemy(this.game, this, 150, 24, 0, 50, 3));
+                AddEnemy(new Enemy(this.game, this, 150, 14, 0, 50, 3));
             }
         }
 
         public void Draw()
         {
-            // Draw the player sprite
             spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend);
 
             // Draw the background image
@@ -224,7 +223,9 @@ namespace Touhou.Battle
                 0.0f, (float)(backgroundImagePosition % backgroundImage.Height - backgroundImage.Height)), backgroundImage.Bounds,
                 Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 1.0f);
 
-            player.animation.Draw(spriteBatch);
+            // Draw the player sprite
+            if (!player.isKilled())
+                player.animation.Draw(spriteBatch);
 
             //Draw each explosion on the screen
             Effect.Explosion explosion;

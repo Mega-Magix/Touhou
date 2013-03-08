@@ -35,12 +35,17 @@ namespace Touhou.Battle
 
         float speed = 170.0f;
         float fireWait = 0.0f;
-        float fireDelay = 0.1f;
+        float fireDelay = 0.08f;
 
         float oldDX;
         float oldDY;
 
         SoundEffect soundShoot;
+
+        float killWait = 0.0f;
+        float killDelay = 1.0f;
+        float respawnWait = 0.0f;
+        float respawnDelay = 2.0f;
 
         public Player(Game game, Level level)
         {
@@ -68,102 +73,128 @@ namespace Touhou.Battle
 
         }
 
-        public float getCenterX()
+        public float GetCenterX()
         {
             return position.X + animation.width / 2;
         }
-        public float getCenterY()
+        public float GetCenterY()
         {
             return position.Y + animation.height / 2;
         }
 
+        public bool isKilled() { return (this.killWait > 0.0f); }
+        public bool isRespawning() { return (this.respawnWait > 0.0f); }
+
         public void Kill()
         {
-            
+            // You can't already be killed or respawning
+            // and kill the player
+            if (!isKilled() && !isRespawning())
+            {
+                killWait = killDelay;
+            }
+        }
+        private void Respawn()
+        {
+            killWait = 0.0f;
+            respawnWait = respawnDelay;
         }
 
         public void Shoot()
         {
             // Fire a new player bullet
             Vector2 bulletPosition;
-            bulletPosition.X = getCenterX();
-            bulletPosition.Y = getCenterY();
-            Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 700.0f);
-            level.addBullet(bullet, BulletSet.Player);
+            bulletPosition.X = GetCenterX();
+            bulletPosition.Y = GetCenterY();
+            Bullet bullet = new Bullet(bulletTexture, bulletPosition, 0.0f, 1300.0f, 6);
+            level.AddBullet(bullet, BulletSet.Player);
             soundShoot.Play();
         }
 
         public void Update(float dt, KeyboardState keystate)
         {
+            if (killWait > 0.0f)
+            {
+                killWait -= dt;
+                if (killWait <= 0.0f)
+                    Respawn();
+            }
+            if (respawnWait > 0.0f)
+                respawnWait -= dt;
 
-            oldDX = velocity.X;
-            oldDY = velocity.Y;
+            if (!isKilled())
+            {
 
-            // Move the player if the arrow keys are pressed
-            velocity = Vector2.Zero;
-            if (keystate.IsKeyDown(Keys.Left))
-            {
-                velocity.X += -speed;
-            }
-            if (keystate.IsKeyDown(Keys.Right))
-            {
-                velocity.X += speed;
-            }
-            if (keystate.IsKeyDown(Keys.Up))
-            {
-                velocity.Y += -speed;
-            }
-            if (keystate.IsKeyDown(Keys.Down))
-            {
-                velocity.Y += speed;
-            }
+                oldDX = velocity.X;
+                oldDY = velocity.Y;
 
-            // Animate the player based on velocity
-            if (velocity.X < 0.0f)
-            {
-                // Moving left
-                if (animation.animationSet != "Left")
+                // Move the player if the arrow keys are pressed
+                velocity = Vector2.Zero;
+                if (keystate.IsKeyDown(Keys.Left))
                 {
-                    animation.animationSet = "Left Accel";
-                    animation.nextAnimationSet = "Left";
+                    velocity.X += -speed;
                 }
-            }
-            else if (velocity.X > 0.0f)
-            {
-                // Moving right
-                if (animation.animationSet != "Right")
+                if (keystate.IsKeyDown(Keys.Right))
                 {
-                    animation.animationSet = "Right Accel";
-                    animation.nextAnimationSet = "Right";
+                    velocity.X += speed;
                 }
-            }
-            else
-            {
-                animation.animationSet = "Fly";
-            }
-
-            //Move the player sprite based on its speed
-            position += velocity * dt;
-            animation.position = position;
-
-            animation.Update(dt);
-
-            // Make sure that the player stays on the screen
-            position.X = MathHelper.Clamp(position.X, 0, level.width - animation.width);
-            position.Y = MathHelper.Clamp(position.Y, 0, level.height - animation.height);
-
-            //Decrease the player firing delay
-            if (fireWait > 0.0f)
-                fireWait -= dt;
-
-            //Check to see if the player will fire a bullet
-            if (keystate.IsKeyDown(Keys.Z))
-            {
-                if (fireWait <= 0.0f)
+                if (keystate.IsKeyDown(Keys.Up))
                 {
-                    fireWait = fireDelay;
-                    Shoot();
+                    velocity.Y += -speed;
                 }
+                if (keystate.IsKeyDown(Keys.Down))
+                {
+                    velocity.Y += speed;
+                }
+
+                // Animate the player based on velocity
+                if (velocity.X < 0.0f)
+                {
+                    // Moving left
+                    if (animation.animationSet != "Left")
+                    {
+                        animation.animationSet = "Left Accel";
+                        animation.nextAnimationSet = "Left";
+                    }
+                }
+                else if (velocity.X > 0.0f)
+                {
+                    // Moving right
+                    if (animation.animationSet != "Right")
+                    {
+                        animation.animationSet = "Right Accel";
+                        animation.nextAnimationSet = "Right";
+                    }
+                }
+                else
+                {
+                    animation.animationSet = "Fly";
+                }
+
+                //Move the player sprite based on its speed
+                position += velocity * dt;
+                animation.position = position;
+
+                animation.Update(dt);
+
+                // Make sure that the player stays on the screen
+                position.X = MathHelper.Clamp(position.X, 0, level.width - animation.width);
+                position.Y = MathHelper.Clamp(position.Y, 0, level.height - animation.height);
+
+                //Decrease the player firing delay
+                if (fireWait > 0.0f)
+                    fireWait -= dt;
+
+                //Check to see if the player will fire a bullet
+                if (keystate.IsKeyDown(Keys.Z))
+                {
+                    if (fireWait <= 0.0f)
+                    {
+                        fireWait = fireDelay;
+                        Shoot();
+                    }
+                }
+
             }
 
         }

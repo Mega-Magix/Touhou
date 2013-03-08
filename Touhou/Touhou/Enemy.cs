@@ -63,7 +63,7 @@ namespace Touhou.Battle
             if (health <= 0)
             {
                 Effect.Explosion explosion = new Effect.Explosion(game, "explodeblue", getCenterX(), getCenterY(), 2.0f, 0.5f);
-                level.addExplosion(explosion);
+                level.AddExplosion(explosion);
                 Destroy();
             }
         }

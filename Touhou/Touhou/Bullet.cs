@@ -25,20 +25,22 @@ namespace Touhou.Battle
         public int damage = 1;
 
         // Create a new bullet with an angle and a speed.
-        public Bullet(Texture2D image, Vector2 position, float angle, float speed)
+        public Bullet(Texture2D image, Vector2 position, float angle, float speed, int radius)
         {
             this.image = image;
             this.position = position - new Vector2(image.Width, image.Height)/2;
             this.speed = speed;
             this.Angle = angle;
+            this.radius = radius;
         }
 
         // Create a new bullet with a position and velocity.
-        public Bullet(Texture2D image, Vector2 position, Vector2 velocity)
+        public Bullet(Texture2D image, Vector2 position, Vector2 velocity, int radius)
         {
             this.image = image;
             this.position = position;
             this.Velocity = velocity;
+            this.radius = radius;
         }
 
         public void Update(float dt)
