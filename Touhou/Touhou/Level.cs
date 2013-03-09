@@ -35,6 +35,8 @@ namespace Touhou.Battle
         List<Bullet> playerBullets = new List<Bullet>();
         List<Bullet> enemyBullets = new List<Bullet>();
 
+        Texture2D bulletTexture;
+
         public Texture2D backgroundImage;
         public float backgroundImagePosition = 0.0f;
         public float backgroundImageSpeed = 30.0f;
@@ -59,13 +61,19 @@ namespace Touhou.Battle
 
             backgroundImage = game.Content.Load<Texture2D>("Sky");
 
+            bulletTexture = game.Content.Load<Texture2D>("testbullet");
+
             // Start playing level music
             // MediaPlayer.Play(music);
 
             screenWidth = game.gameWidth;
             screenHeight = game.gameHeight;
         }
-        
+
+        public void AddBulletEnemy(Bullet newBullet)
+        {
+            AddBullet(newBullet, BulletSet.Enemy);
+        }
         public void AddBullet(Bullet newBullet, BulletSet bulletSet)
         {
             if (bulletSet == BulletSet.Enemy)
@@ -96,7 +104,10 @@ namespace Touhou.Battle
                 if (newEnemyWait <= newEnemyDelay)
                 {
                     newEnemyWait += newEnemyDelay;
-                    AddEnemy(new Enemy(this.game, this, 150, 14, 0, 50, 3));
+                    Enemy testenemy = new Enemy(this.game, this, 150, 14, 0, 50, 3);
+                    testenemy.AddScript("Scripts", 1.0f, 1.0f, 5);
+                    AddEnemy(testenemy);
+                    
                 }
             // :
 
@@ -257,7 +268,7 @@ namespace Touhou.Battle
             }
             for (int i = 0; i < enemyBullets.Count; i++)
             {
-                Bullet bullet = playerBullets[i];
+                Bullet bullet = enemyBullets[i];
                 bullet.Draw(spriteBatch);
             }
 

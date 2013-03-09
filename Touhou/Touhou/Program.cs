@@ -1,4 +1,6 @@
 using System;
+using IronPython.Hosting;
+using Microsoft.Scripting.Hosting;
 
 namespace Touhou
 {
@@ -31,10 +33,11 @@ namespace Touhou
             }
             if (runType == "2")
             {
-                Console.Write("Choose a python script to run: ");
-                String moduleName;
-                moduleName = Console.ReadLine();
-                ironPython.RunFile(moduleName);
+                var ipy = Python.CreateRuntime();
+                dynamic test = ipy.UseFile("../../PythonScripts/HelloWorld.py");
+                int result = test.square(4);
+                System.Console.WriteLine(result);
+                System.Console.ReadLine();
             }
             if (runType == "3")
             {

@@ -8,9 +8,12 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using IronPython.Hosting;
+using Microsoft.Scripting.Hosting;
 
 namespace Touhou.Battle
 {
+
     public class Enemy
     {
         // Collision radius
@@ -28,6 +31,13 @@ namespace Touhou.Battle
 
         public int health;
 
+        List<float> scriptWait = new List<float>();
+        List<float> scriptDelay = new List<float>();
+        List<int> scriptLoops = new List<int>();
+        List<string> scripts = new List<string>();
+
+        Texture2D bulletTexture;
+
         public Enemy(Game game, Level level, int x, int radius, int speedX, int speedY, int health)
         {
             this.game = game;
@@ -39,6 +49,7 @@ namespace Touhou.Battle
 
             Texture2D animationTexture;
             animationTexture = game.Content.Load<Texture2D>("enemy1fly");
+            bulletTexture = game.Content.Load<Texture2D>("testbullet");
 
             position.X = x;
             position.Y = -animationTexture.Height;
@@ -46,6 +57,26 @@ namespace Touhou.Battle
             velocity.Y = speedY;
 
             animation = new Effect.AnimatedTexture(animationTexture, position, 4, 0.2);
+        }
+
+        public void AddScript(string scriptName, float wait, float delay, int loops)
+        {
+            scriptWait.Add(wait);
+            scriptDelay.Add(delay);
+            scriptLoops.Add(loops);
+            //scripts.Add(scriptName);
+            //var python = Python.CreateEngine();
+            //ScriptScope scope = python.CreateScope();
+            //ScriptSource source = python.CreateScriptSourceFromFile("../../Scripts/Scripts/" + scriptName + ".py");
+            //scope.SetVariable("enemy", this);
+            //scope.SetVariable("level", level);
+            //scriptSources.Add(source);
+            //scriptScopes.Add(scope);
+        }
+
+        public Vector2 GetCenter()
+        {
+            return new Vector2(GetCenterX(), GetCenterY());
         }
 
         public float GetCenterX()
@@ -77,6 +108,17 @@ namespace Touhou.Battle
             position += velocity * dt;
             animation.position = position;
             animation.Update(dt);
+
+            for (int i = 0; i < scripts.Count; i++)
+            {
+                scriptWait[i] -= dt;
+                if (scriptWait[i] <= 0.0f && scriptLoops[i] > 0)
+                {
+                    scriptLoops[i]--;
+                    scriptWait[i] = scriptDelay[i];
+                    scriptSources[i].Execute(scriptScopes[i]);
+                }
+            }
 
             if (position.Y >= level.screenHeight)
                 Destroy();

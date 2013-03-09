@@ -164,8 +164,9 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TouhouContent\TouhouContent.contentproj">
-      <Name>TouhouContent</Name>
+      <Name>TouhouContent %28Content%29</Name>
       <XnaReferenceType>Content</XnaReferenceType>
+      <Project>{7F0C2EA4-6E73-4284-9544-EF6C304940D2}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
