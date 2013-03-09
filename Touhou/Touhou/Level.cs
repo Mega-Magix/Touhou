@@ -8,12 +8,14 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using Random;
 
 namespace Touhou.Battle
 {
     public class Level
     {
         public Game game;
+        public Random random = new Random();
 
         Player player;
         List<Enemy> enemies = new List<Enemy>();
@@ -104,8 +106,8 @@ namespace Touhou.Battle
                 if (newEnemyWait <= newEnemyDelay)
                 {
                     newEnemyWait += newEnemyDelay;
-                    Enemy testenemy = new Enemy(this.game, this, 150, 14, 0, 50, 3);
-                    testenemy.AddScript("Scripts", 1.0f, 1.0f, 5);
+                    int testx = (int)(random.Next() * width);
+                    Enemy testenemy = new Enemy(this.game, this, testx, 14, 0, 50, 3);
                     AddEnemy(testenemy);
                     
                 }
