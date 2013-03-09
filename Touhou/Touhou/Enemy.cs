@@ -116,7 +116,6 @@ namespace Touhou.Battle
                 {
                     scriptLoops[i]--;
                     scriptWait[i] = scriptDelay[i];
-                    scriptSources[i].Execute(scriptScopes[i]);
                 }
             }
 
