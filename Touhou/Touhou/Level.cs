@@ -91,6 +91,15 @@ namespace Touhou.Battle
 
             player.Update(dt, keystate);
 
+            // TEST : Adding test enemies
+                newEnemyWait -= dt;
+                if (newEnemyWait <= newEnemyDelay)
+                {
+                    newEnemyWait += newEnemyDelay;
+                    AddEnemy(new Enemy(this.game, this, 150, 14, 0, 50, 3));
+                }
+            // :
+
             // Update each explosion on the screen
             Effect.Explosion explosion;
             for (int i = 0; i < explosions.Count; i++)
@@ -205,12 +214,8 @@ namespace Touhou.Battle
                 }
             }
 
-            newEnemyWait -= dt;
-            if (newEnemyWait <= newEnemyDelay)
-            {
-                newEnemyWait += newEnemyDelay;
-                AddEnemy(new Enemy(this.game, this, 150, 14, 0, 50, 3));
-            }
+            if (keystate.IsKeyDown(Keys.Escape))
+                game.Exit();
         }
 
         public void Draw()

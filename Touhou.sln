@@ -20,6 +20,7 @@ Global
 		{7CC29A37-D329-4755-AA01-C7D256F88834}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{7CC29A37-D329-4755-AA01-C7D256F88834}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{7CC29A37-D329-4755-AA01-C7D256F88834}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{7CC29A37-D329-4755-AA01-C7D256F88834}.Debug|Mixed Platforms.Deploy.0 = Debug|x86
 		{7CC29A37-D329-4755-AA01-C7D256F88834}.Debug|x86.ActiveCfg = Debug|x86
 		{7CC29A37-D329-4755-AA01-C7D256F88834}.Debug|x86.Build.0 = Debug|x86
 		{7CC29A37-D329-4755-AA01-C7D256F88834}.Release|Any CPU.ActiveCfg = Release|x86
