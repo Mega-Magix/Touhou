@@ -8,7 +8,6 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
-using Random;
 
 namespace Touhou.Battle
 {
@@ -106,8 +105,8 @@ namespace Touhou.Battle
                 if (newEnemyWait <= newEnemyDelay)
                 {
                     newEnemyWait += newEnemyDelay;
-                    int testx = (int)(random.Next() * width);
-                    Enemy testenemy = new Enemy(this.game, this, testx, 14, 0, 50, 3);
+                    int testx = (int)(random.NextDouble() * (width - 40.0) + 20.0);
+                    Enemy testenemy = new Enemy(this.game, this, testx, 16, 0, 50, 3);
                     AddEnemy(testenemy);
                     
                 }
