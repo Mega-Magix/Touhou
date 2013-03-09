@@ -148,6 +148,7 @@
     <Compile Include="Enemy.cs" />
     <Compile Include="ExampleSprite.cs" />
     <Compile Include="Effect.cs" />
+    <Compile Include="EnemyScript.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="IronPython.cs" />
