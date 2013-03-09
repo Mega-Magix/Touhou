@@ -141,6 +141,7 @@ namespace Touhou.Battle
             // and kill the player
             if (!IsKilled() && !IsResponding())
             {
+                level.AddExplosion(new Effect.Explosion(level.game, "explode", X, Y, 12.0f, 1.2f));
                 killWait = killDelay;
             }
         }
